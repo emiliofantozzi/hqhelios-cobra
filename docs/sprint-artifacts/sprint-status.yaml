@@ -1,0 +1,107 @@
+# generated: 2025-12-01
+# project: cobra-bmad
+# project_key: cobra-bmad
+# tracking_system: file-system
+# story_location: '{project-root}/docs/sprint-artifacts'
+
+# STATUS DEFINITIONS:
+# ==================
+# Epic Status:
+#   - backlog: Epic exists in epic file but not contexted
+#   - contexted: Epic tech context created (required before drafting stories)
+#
+# Story Status:
+#   - backlog: Story only exists in epic file
+#   - drafted: Story file created in stories folder by *create-story
+#   - ready-for-dev: Draft approved and story context created by *story-ready
+#   - in-progress: Developer actively working on implementation by *dev-story
+#   - review: Implementation complete, ready for review by *code-review
+#   - done: Story completed by *story-done
+#
+# Retrospective Status:
+#   - optional: Can be completed but not required
+#   - completed: Retrospective has been done by *retrospective
+#
+# WORKFLOW NOTES:
+# ===============
+# - Epics should be marked `contexted` before stories can be marked beyond `backlog`
+# - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
+# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+
+generated: 2025-12-01
+project: cobra-bmad
+project_key: cobra-bmad
+tracking_system: file-system
+story_location: '{project-root}/docs/sprint-artifacts'
+
+development_status:
+  # ============================================================
+  # Epic 1: Foundation Setup
+  # ============================================================
+  epic-1: contexted
+  1-1-configurar-supabase-con-rls-multi-tenant: done
+  1-2-integrar-clerk-con-custom-claims: review
+  1-3-auto-registro-con-creacion-de-tenant: ready-for-dev
+  1-4-seed-data-de-tenant-demo: ready-for-dev
+  epic-1-retrospective: optional
+
+  # ============================================================
+  # Epic 2: CRM y Gestión de Clientes
+  # ============================================================
+  epic-2: backlog
+  2-1-crear-empresas-cliente: backlog
+  2-2-listar-y-editar-empresas: backlog
+  2-3-gestionar-contactos-de-empresa: backlog
+  2-4-editar-y-desactivar-contactos: backlog
+  2-5-crear-facturas-manualmente: backlog
+  2-6-gestionar-estados-de-facturas: backlog
+  2-7-importar-facturas-desde-csv: backlog
+  2-8-dashboard-basico-con-kpis: backlog
+  epic-2-retrospective: optional
+
+  # ============================================================
+  # Epic 3: Motor de Cobranzas Automatizado
+  # ============================================================
+  epic-3: backlog
+  3-1-schema-de-playbooks-y-mensajes: backlog
+  3-2-builder-de-playbooks: backlog
+  3-3-playbooks-pre-configurados-seed: backlog
+  3-4-schema-de-collections: backlog
+  3-5-crear-cobranza-desde-factura: backlog
+  3-6-worker-de-procesamiento-automatico: backlog
+  3-7-control-manual-de-cobranzas: backlog
+  epic-3-retrospective: optional
+
+  # ============================================================
+  # Epic 4: Comunicación Multicanal
+  # ============================================================
+  epic-4: backlog
+  4-1-envio-de-emails-transaccionales: backlog
+  4-2-envio-de-whatsapp: backlog
+  4-3-historial-de-mensajes-enviados: backlog
+  4-4-webhooks-de-delivery-status: backlog
+  epic-4-retrospective: optional
+
+  # ============================================================
+  # Epic 5: Loop de Respuestas e IA
+  # ============================================================
+  epic-5: backlog
+  5-1-captura-de-respuestas-email-n8n: backlog
+  5-2-captura-de-respuestas-whatsapp-n8n: backlog
+  5-3-endpoint-de-customer-response: backlog
+  5-4-bandeja-de-respuestas-pendientes: backlog
+  5-5-aprobar-sugerencia-de-ia: backlog
+  5-6-accion-manual-override: backlog
+  5-7-panel-de-contexto-completo: backlog
+  epic-5-retrospective: optional
+
+  # ============================================================
+  # Epic 6: Dashboard Operativo y Analytics
+  # ============================================================
+  epic-6: backlog
+  6-1-dashboard-operativo-completo: backlog
+  6-2-exportacion-de-reportes: backlog
+  6-3-notificaciones-in-app: backlog
+  6-4-notificaciones-por-email: backlog
+  6-5-escalamiento-manual: backlog
+  epic-6-retrospective: optional

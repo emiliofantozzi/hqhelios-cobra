@@ -20,7 +20,7 @@ Sistema seguro donde cada organización tiene sus datos completamente aislados, 
 - **FR1:** Configurar Supabase con RLS multi-tenant
 - **FR2:** Integrar Clerk con custom claims tenant_id
 - **FR3:** Auto-registro con creación de tenant
-- **FR4:** Seed data de tenant demo
+- **FR4:** Seed data de tenant demo (solo tenant + user; CRM data en Epic 2)
 
 ## Contexto Técnico
 
@@ -276,9 +276,8 @@ function generateSlug(email: string): string {
 Given ejecuto pnpm prisma db seed
 When el script completa
 Then existe tenant "Demo Corp" con slug "demo"
-And existe usuario admin@demo.com
-And existen 3 empresas de ejemplo con contactos
-And existen 10 facturas en estados variados
+And existe usuario admin@demo.com con role "admin"
+And el tenant demo está listo para desarrollo
 ```
 
 **Scenario: Seed es idempotente**
@@ -289,15 +288,7 @@ Then no hay errores de duplicados
 And los datos existentes se actualizan (upsert)
 ```
 
-**Scenario: Estados variados de facturas**
-```gherkin
-Given el seed completó
-When reviso las facturas creadas
-Then hay facturas en estado pendiente
-And hay facturas vencidas (due_date < hoy)
-And hay facturas pagadas
-And hay al menos 1 factura con confirmed_payment_date
-```
+> **Nota:** El seed de companies, contacts e invoices se realizará en Epic 2 cuando existan esas tablas.
 
 #### Notas Técnicas
 - **Archivo:** `prisma/seed.ts`
@@ -309,13 +300,11 @@ And hay al menos 1 factura con confirmed_payment_date
   }
 }
 ```
-- **Datos de seed:**
-  - Tenant: Demo Corp
+- **Datos de seed Epic 1:**
+  - Tenant: Demo Corp (ID fijo para testing)
   - Usuario: admin@demo.com (crear también en Clerk dev)
-  - Empresas: 3 (Acme Corp, Tech Solutions, Global Trade)
-  - Contactos: 2 por empresa (1 primary, 1 escalation)
-  - Facturas: 10 con fechas y estados variados
 - **Usar `upsert`** para idempotencia
+- **Epic 2 extenderá** con: empresas, contactos, facturas
 
 #### Prerequisitos
 - Story 1.3 completada
