@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"%APPDATA%\\Claude\")",
+      "Bash(dir:*)",
+      "Bash(cat:*)",
+      "Bash(node --version)",
+      "Bash(npm:*)",
+      "Bash(npx --version)",
+      "Bash(node test-mcp-servers.js:*)",
+      "Bash(curl:*)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp remove:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "WebFetch(domain:tweakcn.com)",
+      "Bash(git config:*)",
+      "mcp__github__get_file_contents",
+      "Bash(git add:*)"
+    ],
+    "deny": [
+      "Read(./docs/analysis/brainstorming-session-*.md)",
+      "Read(./docs/analysis/product-brief-*.md)",
+      "Read(./docs/sprint-artifacts/validation-report-*.md)"
+    ],
+    "ask": []
+  }
+}
