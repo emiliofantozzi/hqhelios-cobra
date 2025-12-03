@@ -47,7 +47,11 @@
       "mcp__playwright__browser_fill_form",
       "mcp__playwright__browser_type",
       "mcp__playwright__browser_run_code",
-      "Bash(pnpm prisma db push:*)"
+      "Bash(pnpm prisma db push:*)",
+      "Bash(head:*)",
+      "Bash(pnpm test:unit:*)",
+      "SlashCommand(/bmad:bmm:agents:tea)",
+      "Bash(pnpm prisma validate:*)"
     ],
     "deny": [],
     "ask": []

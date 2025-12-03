@@ -63,11 +63,14 @@ development_status:
   # ============================================================
   # Epic 3: Motor de Cobranzas Automatizado
   # ============================================================
-  epic-3: backlog
-  3-1-schema-de-playbooks-y-mensajes: backlog
-  3-2-builder-de-playbooks: backlog
+  # Party Mode Session: 2025-12-03
+  # Gaps Resolved: C1 (IMessageService), C2 (State Machine), C3 (Rate Limiting)
+  # Risk Mitigated: R-001 (Upstash Redis lock)
+  epic-3: contexted
+  3-1-schema-de-playbooks-y-mensajes: done
+  3-2-builder-de-playbooks: ready-for-dev
   3-3-playbooks-pre-configurados-seed: backlog
-  3-4-schema-de-collections: backlog
+  3-4-schema-de-collections: ready-for-dev
   3-5-crear-cobranza-desde-factura: backlog
   3-6-worker-de-procesamiento-automatico: backlog
   3-7-control-manual-de-cobranzas: backlog
@@ -401,3 +404,316 @@ epic_2_detailed_plan:
       - "Mark stories as DONE in sprint-status.yaml as completed"
       - "Run code review after each story"
       - "Execute retrospective when Epic 2 is complete"
+
+# ============================================================
+# EPIC 3 DETAILED SPRINT PLANNING
+# ============================================================
+# Generated: 2025-12-03
+# Party Mode Session: Completed with PM, Architect, SM, TEA
+# Status: Ready for Phase 4 (Development)
+# Total Stories: 7
+
+epic_3_detailed_plan:
+  epic_id: "epic-3"
+  epic_name: "Motor de Cobranzas Automatizado"
+  phase: "Phase 4 - Implementation IN PROGRESS"
+  status: "in-progress"
+  total_stories: 7
+  completed_stories: 1
+
+  # ============================================================
+  # PARTY MODE DECISIONS (2025-12-03)
+  # ============================================================
+  party_mode_decisions:
+    gap_c1_messaging:
+      problem: "Story 3.6 requires sendEmail/sendWhatsApp but not in Epic 3"
+      resolution: "IMessageService interface + MockMessageService in Epic 3"
+      implementation: "Real SendGridService + TwilioService in Epic 4"
+      owner: "Winston (Architect)"
+
+    gap_c2_state_machine:
+      problem: "Collection state transitions not documented"
+      resolution: "Full state machine with 6 states and 11 allowed transitions"
+      states: ["active", "paused", "awaiting_response", "pending_review", "completed", "escalated"]
+      terminal_state: "completed"
+      owner: "Bob (SM)"
+
+    gap_c3_rate_limiting:
+      problem: "Rate limit scope was ambiguous"
+      resolution: |
+        - maxActiveCollectionsPerTenant: 5 (per tenant)
+        - minHoursBetweenMessagesToSameContact: 4 (per contact)
+        - maxMessagesPerDayPerTenant: 10 (per tenant)
+      owner: "Winston (Architect)"
+
+    risk_r001_race_condition:
+      problem: "Worker race condition could cause duplicate messages"
+      severity: 9
+      resolution: "Upstash Redis distributed lock with 45 second TTL"
+      owner: "Murat (TEA)"
+
+  # ============================================================
+  # CRITICAL STORY SEQUENCE
+  # ============================================================
+  # Stories MUST be executed in this order to respect dependencies
+
+  story_sequence:
+    schema_layer:
+      # MUST execute first - creates Playbook and PlaybookMessage tables
+      - "3.1"
+      # Creates Collection table (can run parallel with 3.1)
+      - "3.4"
+
+    builder_layer:
+      # Depends on 3.1 (Playbook schema must exist)
+      - "3.2"
+
+    seed_layer:
+      # Depends on 3.2 (builder patterns useful for seed)
+      - "3.3"
+
+    collection_flow:
+      # Depends on 3.4 (Collection schema) + 3.3 (default playbooks)
+      - "3.5"
+
+    automation_layer:
+      # Depends on 3.5 (collections must exist to process)
+      # CRITICAL: Requires Upstash Redis setup BEFORE implementation
+      - "3.6"
+
+    control_layer:
+      # Depends on 3.5 (collections exist) + 3.6 (worker context)
+      - "3.7"
+
+  # ============================================================
+  # STORY DETAILS
+  # ============================================================
+
+  stories:
+    - id: "3.1"
+      title: "Schema de Playbooks y Mensajes"
+      status: "done"
+      priority: "critical"
+      dependencies: ["epic-2-complete"]
+      blocks: ["3.2", "3.3"]
+      estimated_points: 3
+      acceptance_criteria_count: 4
+      completed_date: "2025-12-03"
+      notes: "COMPLETED - Prisma schema + RLS policies + partial unique index + integration tests"
+
+    - id: "3.2"
+      title: "Builder de Playbooks"
+      status: "backlog"
+      priority: "high"
+      dependencies: ["3.1"]
+      blocks: ["3.3"]
+      estimated_points: 8
+      acceptance_criteria_count: 6
+      notes: "Complex UI with @dnd-kit drag & drop"
+
+    - id: "3.3"
+      title: "Playbooks Pre-configurados (Seed)"
+      status: "backlog"
+      priority: "medium"
+      dependencies: ["3.2"]
+      blocks: ["3.5"]
+      estimated_points: 3
+      acceptance_criteria_count: 3
+      notes: "3 default playbooks in Spanish"
+
+    - id: "3.4"
+      title: "Schema de Collections"
+      status: "backlog"
+      priority: "critical"
+      dependencies: ["epic-2-complete"]
+      blocks: ["3.5", "3.6", "3.7"]
+      estimated_points: 3
+      acceptance_criteria_count: 4
+      notes: "Can run parallel with 3.1"
+
+    - id: "3.5"
+      title: "Crear Cobranza desde Factura"
+      status: "backlog"
+      priority: "high"
+      dependencies: ["3.3", "3.4"]
+      blocks: ["3.6", "3.7"]
+      estimated_points: 5
+      acceptance_criteria_count: 5
+      notes: "Modal + API for creating collections"
+
+    - id: "3.6"
+      title: "Worker de Procesamiento Automático"
+      status: "backlog"
+      priority: "critical"
+      dependencies: ["3.5"]
+      blocks: ["3.7"]
+      estimated_points: 8
+      acceptance_criteria_count: 11
+      notes: "CRITICAL: Setup Upstash BEFORE implementing. Uses MockMessageService."
+      prerequisites:
+        - "Upstash account configured"
+        - "UPSTASH_REDIS_REST_URL env var"
+        - "UPSTASH_REDIS_REST_TOKEN env var"
+
+    - id: "3.7"
+      title: "Control Manual de Cobranzas"
+      status: "backlog"
+      priority: "high"
+      dependencies: ["3.5"]
+      blocks: []
+      estimated_points: 5
+      acceptance_criteria_count: 5
+      notes: "Pause/Resume/Complete + Timeline UI"
+
+  # ============================================================
+  # TECHNICAL PREREQUISITES
+  # ============================================================
+
+  technical_prerequisites:
+    npm_packages:
+      - package: "@dnd-kit/core"
+        version: "^6.0.0"
+        story: "3.2"
+      - package: "@dnd-kit/sortable"
+        version: "^7.0.0"
+        story: "3.2"
+      - package: "@upstash/redis"
+        version: "^1.28.0"
+        story: "3.6"
+
+    environment_variables:
+      - name: "UPSTASH_REDIS_REST_URL"
+        story: "3.6"
+        required: true
+      - name: "UPSTASH_REDIS_REST_TOKEN"
+        story: "3.6"
+        required: true
+
+    vercel_config:
+      - type: "cron"
+        path: "/api/cron/collection-worker"
+        schedule: "*/5 * * * *"
+        story: "3.6"
+
+  # ============================================================
+  # RISK MITIGATION
+  # ============================================================
+
+  risk_mitigation:
+    - risk: "R-001: Worker race condition causes duplicate messages"
+      severity: "critical"
+      mitigation: "Upstash Redis distributed lock with TTL 45s"
+      status: "designed"
+      owner: "Murat (TEA)"
+
+    - risk: "R-002: RLS misconfiguration on new tables"
+      severity: "high"
+      mitigation: "Pre-deploy RLS validation script"
+      status: "pending"
+      owner: "Winston (Architect)"
+
+    - risk: "Drag & drop complexity in Playbook Builder"
+      severity: "medium"
+      mitigation: "Use proven @dnd-kit library, follow existing patterns"
+      status: "planned"
+
+    - risk: "Template variable replacement errors"
+      severity: "low"
+      mitigation: "Graceful handling - undefined vars replaced with empty string"
+      status: "designed"
+
+  # ============================================================
+  # EXECUTION PLAN
+  # ============================================================
+
+  execution_plan:
+    current_phase: "Phase 4 - Development IN PROGRESS"
+    next_story: "3.4"
+    current_story: null
+    current_story_status: "3.1 completed, 3.4 ready"
+
+    recommended_workflow:
+      - step: 1
+        action: "Setup Upstash Redis account"
+        estimated_time: "30 min"
+        deliverables: ["Upstash account", "Redis database created"]
+        blocking: true
+
+      - step: 2
+        action: "Add UPSTASH env vars to Vercel"
+        estimated_time: "10 min"
+        deliverables: ["Environment variables configured"]
+        blocking: true
+
+      - step: 3
+        action: "Install npm packages (@dnd-kit, @upstash/redis)"
+        estimated_time: "10 min"
+        deliverables: ["Dependencies installed"]
+        blocking: true
+
+      - step: 4
+        action: "Dev agent executes Story 3.1 (Playbook Schema)"
+        estimated_time: "3 hours"
+        deliverables: ["Prisma migration", "RLS policies", "Tests"]
+
+      - step: 5
+        action: "Dev agent executes Story 3.4 (Collection Schema) - parallel if capacity"
+        estimated_time: "3 hours"
+        deliverables: ["Prisma migration", "RLS policies", "Conditional UNIQUE index"]
+
+      - step: 6
+        action: "Dev agent executes Story 3.2 (Playbook Builder)"
+        estimated_time: "8 hours"
+        deliverables: ["UI pages", "Drag & drop", "Template preview"]
+
+      - step: 7
+        action: "Continue sequence: 3.3 → 3.5 → 3.6 → 3.7"
+        estimated_time: "~21 hours total"
+        deliverables: ["All Epic 3 functionality complete"]
+
+      - step: 8
+        action: "Execute Epic 3 retrospective"
+        estimated_time: "1 hour"
+        deliverables: ["Lessons learned", "Process improvements"]
+
+  # ============================================================
+  # PHASE 4 APPROVAL
+  # ============================================================
+
+  phase_4_approval:
+    approved: true
+    approved_by: "Scrum Master (Bob) - Party Mode Session"
+    approved_date: "2025-12-03"
+
+    approval_notes: |
+      Epic 3 is READY for Phase 4 (Development).
+
+      Party Mode Session completed with:
+      - PM (John): Validated PRD alignment
+      - Architect (Winston): Resolved C1, C3, designed IMessageService
+      - SM (Bob): Documented State Machine (C2)
+      - TEA (Murat): Designed R-001 mitigation with Upstash
+
+      All prerequisites met:
+      - 7 stories validated and enhanced
+      - Gaps C1, C2, C3 resolved and documented in epic-3-motor-cobranzas.md
+      - Risk R-001 mitigated with Upstash design
+      - Dependencies mapped and sequenced
+
+      BEFORE starting development:
+      1. Setup Upstash Redis account
+      2. Configure env vars in Vercel
+      3. Install @dnd-kit and @upstash/redis packages
+
+      Dev agent can start with Story 3.1 after prerequisites are complete.
+
+      Execution sequence: 3.1 + 3.4 (parallel) → 3.2 → 3.3 → 3.5 → 3.6 → 3.7
+
+    next_steps:
+      - "Setup: Create Upstash Redis account and configure env vars"
+      - "Setup: Install @dnd-kit/core, @dnd-kit/sortable, @upstash/redis"
+      - "Dev agent: Execute Story 3.1 (Playbook Schema)"
+      - "Follow strict sequencing to avoid blocking issues"
+      - "Mark stories as DONE in sprint-status.yaml as completed"
+      - "Run code review after each story"
+      - "Execute retrospective when Epic 3 is complete"

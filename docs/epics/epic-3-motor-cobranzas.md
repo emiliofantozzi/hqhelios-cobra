@@ -101,21 +101,75 @@ model Collection {
 | `paused` | Pausada manualmente |
 | `awaiting_response` | Esperando respuesta del cliente |
 | `pending_review` | Respuesta recibida, pendiente de revisión |
-| `completed` | Finalizada exitosamente |
+| `completed` | Finalizada exitosamente (estado terminal) |
 | `escalated` | Escalada a nivel superior |
 
+### State Machine de Collection (Transiciones Permitidas)
+> Definido por Party Mode Session 2025-12-03
+
+| From | To | Trigger | Actor |
+|------|----|---------|-------|
+| `active` | `paused` | Pausar cobranza | User |
+| `active` | `awaiting_response` | Mensaje enviado con `sendOnlyIfNoResponse=true` | Worker |
+| `active` | `completed` | Usuario marca como pagada/resuelta | User |
+| `active` | `escalated` | Todos los mensajes enviados sin respuesta | Worker |
+| `paused` | `active` | Reanudar cobranza | User |
+| `paused` | `completed` | Cancelar/resolver mientras pausada | User |
+| `awaiting_response` | `active` | Continuar (timeout o decisión) | Worker/User |
+| `awaiting_response` | `pending_review` | Respuesta recibida (webhook N8N) | System |
+| `pending_review` | `active` | Usuario decide continuar cobranza | User |
+| `pending_review` | `completed` | Usuario acepta resolución | User |
+| `escalated` | `completed` | Usuario resuelve manualmente | User |
+
+**Regla crítica:** Solo `completed` es estado terminal. Todos los demás pueden transicionar.
+
 ### Configuración del Worker
+> Clarificado por Party Mode Session 2025-12-03
+
 ```typescript
 const workerConfig = {
   schedule: '*/5 * * * *',  // Cada 5 minutos
   batchSize: 100,           // Collections por ejecución
   timeout: 300000,          // 5 minutos max
+
+  // Redis Lock (Upstash) - Previene race conditions (R-001)
+  lock: {
+    provider: 'upstash',
+    key: 'collection-worker-lock',
+    ttlSeconds: 45,         // Auto-release después de 45 seg
+  },
+
+  // Rate Limits - SCOPE CLARIFICADO
   rateLimits: {
-    maxActivePerCompany: 5,
-    minHoursBetweenMessages: 4,
-    maxMessagesPerDay: 10
+    // Máximo 5 collections ACTIVAS simultáneas POR TENANT
+    maxActiveCollectionsPerTenant: 5,
+
+    // Mínimo 4 horas entre mensajes AL MISMO CONTACTO (primaryContactId)
+    minHoursBetweenMessagesToSameContact: 4,
+
+    // Máximo 10 mensajes por día POR TENANT (todas las collections sumadas)
+    maxMessagesPerDayPerTenant: 10
   }
 };
+```
+
+### Servicio de Mensajería (IMessageService)
+> Decisión arquitectónica: Patrón Ports & Adapters
+
+```typescript
+// src/lib/services/messaging/types.ts
+interface IMessageService {
+  send(params: {
+    channel: 'email' | 'whatsapp';
+    to: string;
+    subject?: string;
+    body: string;
+    metadata?: Record<string, unknown>;
+  }): Promise<{ success: boolean; messageId?: string; error?: string }>;
+}
+
+// Epic 3: MockMessageService (logs to console/DB, no envía realmente)
+// Epic 4: SendGridService + TwilioService (implementaciones reales)
 ```
 
 ---
@@ -591,6 +645,43 @@ When worker ejecuta
 Then completa en < 30 segundos
 ```
 
+**Scenario: Distributed Lock (R-001 Mitigation)**
+```gherkin
+Given the worker is triggered
+When another worker instance is already running
+Then this instance exits with status "lock_held" without processing
+```
+
+**Scenario: Rate Limit - Max Active Per Tenant**
+```gherkin
+Given tenant "A" has 5 active collections
+When worker tries to process a 6th collection for tenant "A"
+Then that collection is skipped with reason "max_active_exceeded"
+```
+
+**Scenario: Rate Limit - Time Between Messages**
+```gherkin
+Given contact "X" received a message 2 hours ago
+And minHoursBetweenMessagesToSameContact = 4
+When worker processes a collection for contact "X"
+Then message is skipped with reason "min_hours_not_met"
+```
+
+**Scenario: Rate Limit - Daily Limit Per Tenant**
+```gherkin
+Given tenant "B" has sent 10 messages today
+When worker processes any collection for tenant "B"
+Then message is skipped with reason "daily_limit_exceeded"
+```
+
+**Scenario: Use IMessageService for sending**
+```gherkin
+Given worker needs to send a message
+When it calls the messaging service
+Then it uses IMessageService.send() interface
+And MockMessageService logs the message without sending
+```
+
 #### Notas Técnicas
 - **Ruta:** `src/app/api/cron/collection-worker/route.ts`
 - **Lógica:** `src/lib/workers/collection-worker.ts`
@@ -730,5 +821,16 @@ Then veo opciones según estado:
 
 ---
 
-**Última actualización:** 2025-12-01
-**Estado:** 🔜 Pendiente
+**Última actualización:** 2025-12-03
+**Estado:** 🔜 Pendiente → Ready for Sprint Planning
+
+---
+
+## Decisiones de Party Mode (2025-12-03)
+
+| Decisión | Resolución | Owner |
+|----------|-----------|-------|
+| **Gap C1: Envío de Mensajes** | IMessageService + MockMessageService en Epic 3, implementaciones reales en Epic 4 | Winston (Architect) |
+| **Gap C2: State Machine** | Transiciones completas documentadas arriba | Bob (SM) |
+| **Gap C3: Rate Limiting** | Scope clarificado: por tenant y por contacto | Winston (Architect) |
+| **R-001: Race Condition** | Upstash Redis lock con TTL 45 seg | Murat (TEA) |

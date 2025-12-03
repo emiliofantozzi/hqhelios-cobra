@@ -51,14 +51,12 @@ export default function DashboardGroupLayout({
             >
               Facturas
             </Link>
-{/* TODO: Descomentar cuando Epic 3 esté implementada
             <Link
-              href="/collections"
+              href="/playbooks"
               className="block px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
-              Cobranzas
+              Playbooks
             </Link>
-*/}
           </nav>
         </aside>
 
