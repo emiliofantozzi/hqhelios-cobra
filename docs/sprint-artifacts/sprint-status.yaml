@@ -53,7 +53,7 @@ development_status:
   2-2-listar-y-editar-empresas: done
   2-3-gestionar-contactos-de-empresa: done
   2-4-editar-y-desactivar-contactos: done
-  2-5-crear-facturas-manualmente: ready-for-dev
+  2-5-crear-facturas-manualmente: done
   2-6-gestionar-estados-de-facturas: ready-for-dev
   2-7-importar-facturas-desde-csv: ready-for-dev
   2-8-dashboard-basico-con-kpis: ready-for-dev
@@ -121,7 +121,7 @@ epic_2_detailed_plan:
   phase: "Phase 4 - Implementation"
   status: "ready_for_dev"
   total_stories: 9
-  completed_stories: 1
+  completed_stories: 5
 
   # ============================================================
   # CRITICAL STORY SEQUENCE
@@ -175,7 +175,7 @@ epic_2_detailed_plan:
 
     - id: "2.2"
       title: "Listar y Editar Empresas"
-      status: "ready_for_dev"
+      status: "done"
       priority: "high"
       dependencies: ["2.1", "2.6"]
       blocks: []
@@ -185,7 +185,7 @@ epic_2_detailed_plan:
 
     - id: "2.3"
       title: "Gestionar Contactos de Empresa"
-      status: "ready_for_dev"
+      status: "done"
       priority: "critical"
       dependencies: ["2.1"]
       blocks: ["2.4", "2.5", "2.7", "2.9"]
@@ -195,7 +195,7 @@ epic_2_detailed_plan:
 
     - id: "2.4"
       title: "Editar y Desactivar Contactos"
-      status: "ready_for_dev"
+      status: "done"
       priority: "high"
       dependencies: ["2.3", "2.6"]
       blocks: []
@@ -205,7 +205,7 @@ epic_2_detailed_plan:
 
     - id: "2.5"
       title: "Crear Facturas Manualmente"
-      status: "ready_for_dev"
+      status: "done"
       priority: "critical"
       dependencies: ["2.1", "2.3"]
       blocks: ["2.6", "2.7", "2.8", "2.9"]
@@ -284,8 +284,8 @@ epic_2_detailed_plan:
 
   execution_plan:
     current_phase: "Phase 4 - Development"
-    next_story: "2.2"
-    current_story: "2.1"
+    next_story: "2.6"
+    current_story: "2.5"
     current_story_status: "done"
 
     recommended_workflow:
