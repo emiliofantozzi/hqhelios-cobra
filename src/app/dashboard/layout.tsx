@@ -39,19 +39,19 @@ export default function DashboardLayout({
               Dashboard
             </Link>
             <Link
-              href="/dashboard/companies"
+              href="/companies"
               className="block px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
               Empresas
             </Link>
             <Link
-              href="/dashboard/invoices"
+              href="/invoices"
               className="block px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
               Facturas
             </Link>
             <Link
-              href="/dashboard/collections"
+              href="/collections"
               className="block px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
               Cobranzas
