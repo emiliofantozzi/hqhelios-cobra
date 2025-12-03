@@ -5,7 +5,7 @@
 **Módulo:** Dashboard & Analytics
 **Prioridad:** Alta
 **Estimación:** 8-10 horas
-**Estado:** ready-for-dev
+**Estado:** completed
 **Dependencias:** Story 2.5 (Facturas), Story 2.6 (Estados)
 
 ---
@@ -1258,8 +1258,34 @@ describe("Dashboard Performance", () => {
 
 ---
 
-**Última actualización:** 2025-12-02
-**Estado:** ✅ Ready for Dev
+## 📝 Dev Agent Record
+
+### Implementación Completada: 2025-12-03
+
+#### Archivos Creados
+- `src/lib/services/dashboard-service.ts` - Servicio con queries de KPIs, segmentos y facturas críticas
+- `src/components/dashboard/kpi-card.tsx` - Componente de tarjeta KPI con ícono
+- `src/components/dashboard/overdue-chart.tsx` - Gráfico de barras Recharts para facturas vencidas
+- `src/components/dashboard/critical-invoices-table.tsx` - Tabla de top 10 facturas críticas
+- `src/app/api/dashboard/route.ts` - API endpoint con soporte de filtros
+
+#### Archivos Modificados
+- `src/app/dashboard/page.tsx` - Reemplazado placeholder con dashboard funcional
+- `package.json` - Agregada dependencia recharts@3.5.1
+
+#### Decisiones Técnicas
+- **UI de filtros diferida:** Por decisión del usuario, solo se preparó el API con soporte de filtros (companyIds, dateFrom, dateTo) pero sin componentes de UI interactivos
+- **RLS automático:** Las queries usan `getSupabaseClient(tenantId)` que configura el contexto de tenant automáticamente
+- **Server Components:** Dashboard page es server component para SSR, solo OverdueChart es client component (requerido por Recharts)
+
+#### Tests
+- Build exitoso sin errores de tipo
+- Test manual pendiente en browser
+
+---
+
+**Última actualización:** 2025-12-03
+**Estado:** ✅ Completado
 **Estimación:** 8-10 horas
 **Complejidad:** Media-Alta
 **Epic Completion:** 🎉 100% (8/8 stories)

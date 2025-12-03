@@ -5,7 +5,7 @@
 **Módulo:** Invoices (Bulk Import)
 **Prioridad:** Alta
 **Estimación:** 7-9 horas
-**Estado:** ready-for-dev
+**Estado:** done
 **Dependencias:** Story 2.5 (Crear Facturas), Story 2.1 (Companies)
 
 ---
@@ -1494,7 +1494,8 @@ describe("CSV Import Validation", () => {
 
 ---
 
-**Última actualización:** 2025-12-02
-**Estado:** ✅ Ready for Dev
+**Última actualización:** 2025-12-03
+**Estado:** ✅ Done
 **Estimación:** 7-9 horas
 **Complejidad:** Alta
+**Completada:** 2025-12-03

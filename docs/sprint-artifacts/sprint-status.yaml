@@ -54,10 +54,10 @@ development_status:
   2-3-gestionar-contactos-de-empresa: done
   2-4-editar-y-desactivar-contactos: done
   2-5-crear-facturas-manualmente: done
-  2-6-gestionar-estados-de-facturas: ready-for-dev
-  2-7-importar-facturas-desde-csv: ready-for-dev
-  2-8-dashboard-basico-con-kpis: ready-for-dev
-  2-9-exportar-datos-a-csv: ready-for-dev
+  2-6-gestionar-estados-de-facturas: done
+  2-7-importar-facturas-desde-csv: done
+  2-8-dashboard-basico-con-kpis: done
+  2-9-exportar-datos-a-csv: done
   epic-2-retrospective: optional
 
   # ============================================================
@@ -119,9 +119,9 @@ epic_2_detailed_plan:
   epic_id: "epic-2"
   epic_name: "CRM y Gestión de Clientes"
   phase: "Phase 4 - Implementation"
-  status: "ready_for_dev"
+  status: "in_progress"
   total_stories: 9
-  completed_stories: 5
+  completed_stories: 9
 
   # ============================================================
   # CRITICAL STORY SEQUENCE
@@ -215,7 +215,7 @@ epic_2_detailed_plan:
 
     - id: "2.6"
       title: "Gestionar Estados de Facturas"
-      status: "ready_for_dev"
+      status: "done"
       priority: "critical"
       dependencies: ["2.5"]
       blocks: ["2.2", "2.4", "2.7", "2.8", "2.9"]
@@ -225,7 +225,7 @@ epic_2_detailed_plan:
 
     - id: "2.7"
       title: "Importar Facturas desde CSV"
-      status: "ready_for_dev"
+      status: "done"
       priority: "medium"
       dependencies: ["2.1", "2.5", "2.6"]
       blocks: []
@@ -235,23 +235,23 @@ epic_2_detailed_plan:
 
     - id: "2.8"
       title: "Dashboard Básico con KPIs"
-      status: "ready_for_dev"
+      status: "done"
       priority: "high"
       dependencies: ["2.1", "2.3", "2.5", "2.6"]
       blocks: []
       estimated_points: 5
       acceptance_criteria_count: 8
-      notes: "Execute LAST - depends on all data"
+      notes: "COMPLETED 2025-12-03 - Dashboard with 4 KPIs, overdue chart, critical invoices table"
 
     - id: "2.9"
       title: "Exportar Datos a CSV"
-      status: "ready_for_dev"
+      status: "done"
       priority: "high"
       dependencies: ["2.1", "2.3", "2.5"]
       blocks: []
       estimated_points: 3
       acceptance_criteria_count: 7
-      notes: "NEW - Required for MVP per FR11. Can run in parallel with 2.2, 2.4, 2.7"
+      notes: "COMPLETED 2025-12-03 - Client-side CSV export for companies, invoices, contacts. UTF-8 BOM for Excel compatibility."
 
   # ============================================================
   # RISK MITIGATION
@@ -283,10 +283,10 @@ epic_2_detailed_plan:
   # ============================================================
 
   execution_plan:
-    current_phase: "Phase 4 - Development"
-    next_story: "2.6"
-    current_story: "2.5"
-    current_story_status: "done"
+    current_phase: "Phase 4 - Development COMPLETE"
+    next_story: "epic-2-retrospective"
+    current_story: null
+    current_story_status: "all-stories-done"
 
     recommended_workflow:
       - step: 1

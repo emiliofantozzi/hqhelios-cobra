@@ -5,7 +5,7 @@
 **Módulo:** Invoices (State Management)
 **Prioridad:** Alta
 **Estimación:** 6-8 horas
-**Estado:** completed
+**Estado:** done
 **Dependencias:** Story 2.5 (Crear Facturas)
 
 ---

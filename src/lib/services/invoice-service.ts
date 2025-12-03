@@ -2,6 +2,7 @@
  * Invoice Service - Lógica de negocio para facturas
  * Story 2.5: Crear Facturas Manualmente
  * Story 2.6: Gestionar Estados de Facturas
+ * Story 2.7: Importar Facturas desde CSV
  *
  * @module lib/services/invoice-service
  */
@@ -448,4 +449,210 @@ export async function createInitialStatusHistory(
     console.error('Error creating initial status history:', error);
     // No falla la operación principal
   }
+}
+
+// ============================================
+// Story 2.7: Importar Facturas desde CSV
+// ============================================
+
+import type { CSVInvoiceRow } from '@/lib/validations/invoice-import-schema';
+
+/**
+ * Resultado de importación masiva
+ */
+interface BulkImportResult {
+  success: boolean;
+  importedCount?: number;
+  errors?: Array<{
+    rowNumber: number;
+    message: string;
+  }>;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Error de validación de reglas de negocio para una fila
+ */
+interface BusinessRuleError {
+  rowNumber: number;
+  errors: string[];
+}
+
+/**
+ * Valida reglas de negocio server-side para las filas del CSV
+ *
+ * Validaciones:
+ * 1. company_tax_id existe en tenant
+ * 2. invoice_number único en tenant
+ *
+ * @param tenantId - ID del tenant
+ * @param rows - Filas ya validadas por Zod
+ * @returns Array de errores por fila (vacío si todo OK)
+ */
+export async function validateBusinessRules(
+  tenantId: string,
+  rows: CSVInvoiceRow[]
+): Promise<BusinessRuleError[]> {
+  const supabase = await getSupabaseClient(tenantId);
+  const results: BusinessRuleError[] = [];
+
+  // 1. Obtener todos los tax_ids únicos del CSV
+  const taxIds = Array.from(new Set(rows.map((r) => r.company_tax_id)));
+
+  // 2. Lookup de companies en batch
+  const { data: companies, error: companiesError } = await supabase
+    .from('companies')
+    .select('id, tax_id')
+    .eq('is_active', true)
+    .in('tax_id', taxIds);
+
+  if (companiesError) {
+    throw new Error('Error al validar empresas');
+  }
+
+  const taxIdToCompanyId = new Map(companies?.map((c) => [c.tax_id, c.id]) || []);
+
+  // 3. Obtener todos los invoice_numbers ya existentes
+  const invoiceNumbers = rows.map((r) => r.invoice_number);
+
+  const { data: existingInvoices, error: invoicesError } = await supabase
+    .from('invoices')
+    .select('invoice_number')
+    .in('invoice_number', invoiceNumbers);
+
+  if (invoicesError) {
+    throw new Error('Error al validar facturas existentes');
+  }
+
+  const existingInvoiceNumbers = new Set(
+    existingInvoices?.map((i) => i.invoice_number) || []
+  );
+
+  // 4. Validar cada fila
+  rows.forEach((row, index) => {
+    const rowNumber = index + 2; // +2 por header y 0-index
+    const errors: string[] = [];
+
+    // Validar company exists
+    if (!taxIdToCompanyId.has(row.company_tax_id)) {
+      errors.push(`Empresa con Tax ID '${row.company_tax_id}' no encontrada`);
+    }
+
+    // Validar invoice_number único
+    if (existingInvoiceNumbers.has(row.invoice_number)) {
+      errors.push(`Número de factura '${row.invoice_number}' ya existe`);
+    }
+
+    if (errors.length > 0) {
+      results.push({ rowNumber, errors });
+    }
+  });
+
+  return results;
+}
+
+/**
+ * Importa facturas masivamente en una transacción
+ *
+ * Proceso:
+ * 1. Re-valida reglas de negocio server-side
+ * 2. Si todas válidas, hace batch insert
+ * 3. Supabase batch insert es atómico (all-or-nothing)
+ *
+ * @param tenantId - ID del tenant
+ * @param userId - Clerk User ID para status history
+ * @param rows - Filas validadas del CSV
+ * @returns Resultado con count de importadas o errores
+ */
+export async function bulkImportInvoices(
+  tenantId: string,
+  userId: string,
+  rows: CSVInvoiceRow[]
+): Promise<BulkImportResult> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  // 1. Validar reglas de negocio
+  const businessErrors = await validateBusinessRules(tenantId, rows);
+
+  if (businessErrors.length > 0) {
+    return {
+      success: false,
+      errors: businessErrors.map((e) => ({
+        rowNumber: e.rowNumber,
+        message: e.errors.join(', '),
+      })),
+    };
+  }
+
+  // 2. Obtener mapping tax_id → company_id
+  const taxIds = Array.from(new Set(rows.map((r) => r.company_tax_id)));
+  const { data: companies } = await supabase
+    .from('companies')
+    .select('id, tax_id')
+    .eq('is_active', true)
+    .in('tax_id', taxIds);
+
+  const taxIdToCompanyId = new Map(companies?.map((c) => [c.tax_id, c.id]) || []);
+
+  // 3. Preparar datos para batch insert
+  const invoicesToInsert = rows.map((row) => ({
+    tenant_id: tenantId,
+    company_id: taxIdToCompanyId.get(row.company_tax_id)!,
+    invoice_number: row.invoice_number,
+    amount: row.amount,
+    currency: row.currency,
+    issue_date: row.issue_date,
+    due_date: row.due_date,
+    description: row.description || null,
+    payment_status: 'pendiente',
+    is_active: true,
+  }));
+
+  // 4. Batch insert (atómico en Supabase)
+  const { data: insertedInvoices, error: insertError } = await supabase
+    .from('invoices')
+    .insert(invoicesToInsert)
+    .select('id');
+
+  if (insertError) {
+    console.error('Error in bulk import:', insertError);
+    return {
+      success: false,
+      error: {
+        code: 'IMPORT_FAILED',
+        message: 'Error al importar facturas. Ninguna fue creada.',
+      },
+    };
+  }
+
+  // 5. Crear registros de historial para todas las facturas
+  if (insertedInvoices && insertedInvoices.length > 0) {
+    const historyRecords = insertedInvoices.map((inv) => ({
+      tenant_id: tenantId,
+      invoice_id: inv.id,
+      old_status: null,
+      new_status: INVOICE_STATUS.PENDIENTE,
+      changed_by: userId,
+      note: 'Importada desde CSV',
+    }));
+
+    const { error: historyError } = await supabase
+      .from('invoice_status_history')
+      .insert(historyRecords);
+
+    if (historyError) {
+      console.error('Error creating bulk status history:', historyError);
+      // No falla la operación principal
+    }
+  }
+
+  console.log(`Bulk import: ${insertedInvoices?.length || 0} invoices imported for tenant ${tenantId}`);
+
+  return {
+    success: true,
+    importedCount: insertedInvoices?.length || 0,
+  };
 }

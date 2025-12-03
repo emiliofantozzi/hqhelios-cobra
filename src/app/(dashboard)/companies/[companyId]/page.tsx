@@ -24,6 +24,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ContactsList } from '@/components/contacts/contacts-list';
+import { Download } from 'lucide-react';
+import { exportContactsToCSV } from '@/lib/exports/export-contacts';
 
 interface Contact {
   id: string;
@@ -262,18 +264,29 @@ export default function CompanyDetailPage() {
         </TabsContent>
 
         <TabsContent value="contacts" className="space-y-4">
-          <div className="flex items-center gap-2 bg-white rounded-lg border p-4">
-            <Checkbox
-              id="show-inactive-contacts"
-              checked={showInactiveContacts}
-              onCheckedChange={(checked) => setShowInactiveContacts(checked as boolean)}
-            />
-            <label
-              htmlFor="show-inactive-contacts"
-              className="text-sm font-medium text-gray-700 cursor-pointer"
+          <div className="flex items-center justify-between bg-white rounded-lg border p-4">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id="show-inactive-contacts"
+                checked={showInactiveContacts}
+                onCheckedChange={(checked) => setShowInactiveContacts(checked as boolean)}
+              />
+              <label
+                htmlFor="show-inactive-contacts"
+                className="text-sm font-medium text-gray-700 cursor-pointer"
+              >
+                Mostrar contactos inactivos
+              </label>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => exportContactsToCSV(contacts as any, company.name)}
+              disabled={contacts.length === 0}
             >
-              Mostrar contactos inactivos
-            </label>
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
           </div>
           <ContactsList
             contacts={contacts}

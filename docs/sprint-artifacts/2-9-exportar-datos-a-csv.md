@@ -5,7 +5,7 @@
 **Módulo:** Data Export (CSV)
 **Prioridad:** Alta (Requerido para MVP según FR11)
 **Estimación:** 3-4 horas
-**Estado:** ready-for-dev
+**Estado:** done
 **Dependencias:** Story 2.1 (Companies), Story 2.3 (Contacts), Story 2.5 (Invoices)
 
 ---
@@ -907,7 +907,39 @@ describe('Export Empresas', () => {
 
 ---
 
-**Última actualización:** 2025-12-02
-**Estado:** ✅ Ready for Dev
+**Última actualización:** 2025-12-03
+**Estado:** ✅ Done
 **Estimación:** 3-4 horas
 **Complejidad:** Media-Baja
+
+---
+
+## Dev Agent Record
+
+**Completed:** 2025-12-03
+**Developer:** Amelia (Dev Agent)
+
+### Implementation Summary
+
+**Files Created:**
+- `src/lib/utils/csv-export.ts` - Core CSV utility with UTF-8 BOM
+- `src/lib/exports/export-companies.ts` - Companies export handler
+- `src/lib/exports/export-invoices.ts` - Invoices export handler
+- `src/lib/exports/export-contacts.ts` - Contacts export handler
+
+**Files Modified:**
+- `src/app/(dashboard)/companies/page.tsx` - Added export button
+- `src/app/(dashboard)/invoices/page.tsx` - Added export button
+- `src/app/(dashboard)/companies/[companyId]/page.tsx` - Added export button in Contacts tab
+
+**Tests Created:**
+- `__tests__/lib/utils/csv-export.test.ts` (13 tests)
+- `__tests__/lib/exports/export-companies.test.ts` (5 tests)
+- `__tests__/lib/exports/export-invoices.test.ts` (7 tests)
+- `__tests__/lib/exports/export-contacts.test.ts` (9 tests)
+
+### Notes
+- Export is 100% client-side (no API calls)
+- UTF-8 BOM ensures Excel compatibility with Spanish characters (ñ, á, é)
+- Export respects active filters (e.g., showInactive checkbox)
+- Contacts export includes company name in filename for context

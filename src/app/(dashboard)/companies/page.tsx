@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { CompaniesTable, type CompanyRow } from '@/components/tables/companies-table';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Download } from 'lucide-react';
+import { exportCompaniesToCSV } from '@/lib/exports/export-companies';
 
 /**
  * Componente de estado vacío
@@ -121,9 +123,19 @@ export default function CompaniesPage() {
               Gestiona las empresas cliente de tu cartera
             </p>
           </div>
-          <Link href="/companies/new">
-            <Button>Nueva Empresa</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => exportCompaniesToCSV(companies as any)}
+              disabled={companies.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Link href="/companies/new">
+              <Button>Nueva Empresa</Button>
+            </Link>
+          </div>
         </div>
 
         {/* Filtro de inactivos */}

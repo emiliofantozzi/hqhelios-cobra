@@ -14,6 +14,8 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge';
+import { Download } from 'lucide-react';
+import { exportInvoicesToCSV } from '@/lib/exports/export-invoices';
 import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
 
 interface Invoice {
@@ -113,9 +115,19 @@ export default function InvoicesPage() {
               Gestiona las facturas de tus clientes
             </p>
           </div>
-          <Link href="/invoices/new">
-            <Button>Nueva Factura</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => exportInvoicesToCSV(invoices as any)}
+              disabled={invoices.length === 0}
+            >
+              <Download className="mr-2 h-4 w-4" />
+              Exportar CSV
+            </Button>
+            <Link href="/invoices/new">
+              <Button>Nueva Factura</Button>
+            </Link>
+          </div>
         </div>
 
         {/* Contenido */}
