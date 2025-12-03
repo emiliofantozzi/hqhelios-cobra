@@ -5,9 +5,9 @@
  */
 import { auth, clerkClient } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+import { getSupabaseClient } from '@/lib/db/supabase'; // FIX 18: Regular import instead of dynamic
+import { isValidUUID } from '@/lib/utils/validation';
+import '@/types/clerk.types'; // Importar extension de tipos
 
 /**
  * Obtiene el tenant_id del usuario actualmente autenticado.
@@ -31,10 +31,17 @@ export async function getTenantId(): Promise<string> {
   // Obtener usuario de Clerk para acceder a public_metadata
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
-  const tenantId = user.publicMetadata.tenant_id as string | undefined;
+
+  // FIX 17: Add null safety on publicMetadata
+  const tenantId = user.publicMetadata?.tenant_id as string | undefined;
 
   if (!tenantId) {
     throw new Error('User does not have a tenant assigned');
+  }
+
+  // Validar formato UUID
+  if (!isValidUUID(tenantId)) {
+    throw new Error(`Invalid tenant_id format: ${tenantId}`);
   }
 
   return tenantId;
@@ -42,6 +49,7 @@ export async function getTenantId(): Promise<string> {
 
 /**
  * Obtiene el usuario completo de la base de datos.
+ * IMPORTANTE: Usa RLS para garantizar aislamiento de tenants.
  *
  * @returns Promise con el usuario completo incluyendo datos de DB
  * @throws {Error} Si el usuario no esta autenticado o no existe en DB
@@ -59,16 +67,26 @@ export async function getCurrentUser() {
     throw new Error('Not authenticated');
   }
 
-  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+  // Obtener tenant_id primero
+  const tenantId = await getTenantId();
+
+  // FIX 18: Use regular import (already imported at top)
+  const supabase = await getSupabaseClient(tenantId);
 
   const { data: user, error } = await supabase
     .from('users')
     .select('*')
     .eq('clerk_user_id', userId)
+    .eq('tenant_id', tenantId) // Validar tenant explicitamente
     .single();
 
   if (error || !user) {
     throw new Error('User not found in database');
+  }
+
+  // FIX 8: Check if user is active
+  if (!user.is_active) {
+    throw new Error('User is inactive');
   }
 
   return user;

@@ -1,11 +1,13 @@
 ---
 id: epic-2
 title: "CRM y Gestión de Clientes"
-status: pending
+status: ready-for-dev
 priority: high
 dependencies: [epic-1]
-stories_count: 8
+stories_count: 9
+stories_drafted: 9
 frs_covered: [FR5, FR6, FR7, FR8, FR9, FR10, FR11, FR12, FR13]
+last_updated: 2025-12-02
 ---
 
 # Epic 2: CRM y Gestión de Clientes 👥
@@ -670,6 +672,89 @@ GROUP BY 1;
 
 #### Prerequisitos
 - Story 2.6 completada
+
+---
+
+### Story 2.9: Exportar Datos a CSV
+
+**Como** Miguel (Coordinador de Cobranzas),
+**Quiero** exportar datos de empresas, contactos y facturas a formato CSV,
+**Para que** pueda analizar la información en herramientas externas (Excel, Google Sheets) y mantener respaldos de los datos.
+
+#### Criterios de Aceptación
+
+**Scenario: Exportar empresas a CSV**
+```gherkin
+Given estoy en /dashboard/empresas
+When hago clic en botón "Exportar a CSV"
+Then se descarga archivo "empresas-{timestamp}.csv"
+And el archivo contiene todas las empresas de mi tenant
+And caracteres especiales (ñ, á, é) se visualizan correctamente en Excel
+```
+
+**Scenario: Exportar contactos a CSV**
+```gherkin
+Given estoy en /dashboard/contactos
+When hago clic en botón "Exportar a CSV"
+Then se descarga archivo "contactos-{timestamp}.csv"
+And el archivo incluye nombre, email, teléfono, cargo, empresa, estado
+```
+
+**Scenario: Exportar facturas a CSV**
+```gherkin
+Given estoy en /dashboard/facturas
+When hago clic en botón "Exportar a CSV"
+Then se descarga archivo "facturas-{timestamp}.csv"
+And el archivo incluye número, empresa, contacto, monto, fechas, estado
+```
+
+**Scenario: Export respeta filtros**
+```gherkin
+Given he aplicado filtros en la página (por estado, empresa, etc.)
+When exporto a CSV
+Then solo se exportan los registros que coinciden con los filtros activos
+```
+
+**Scenario: Campos vacíos se manejan correctamente**
+```gherkin
+Given existen campos opcionales sin datos
+When se exporta a CSV
+Then los campos vacíos se representan como cadenas vacías
+And NO como "null" o "undefined"
+```
+
+**Scenario: UTF-8 con BOM para Excel**
+```gherkin
+Given datos contienen caracteres especiales (ñ, á, é)
+When se exporta a CSV
+Then el archivo usa UTF-8 con BOM
+And se visualiza correctamente al abrir en Excel
+```
+
+**Scenario: Multi-tenancy enforcement**
+```gherkin
+Given soy usuario de un tenant específico
+When exporto cualquier tipo de dato
+Then solo se exportan registros de MI tenant (RLS enforcement)
+```
+
+#### Notas Técnicas
+- **Implementación:** 100% client-side (no API routes necesarias)
+- **Utilidades:**
+  - `src/lib/utils/csv-export.ts` - Core export functionality
+  - `src/lib/exports/export-empresas.ts`
+  - `src/lib/exports/export-contactos.ts`
+  - `src/lib/exports/export-facturas.ts`
+- **Encoding:** UTF-8 con BOM (`\uFEFF`) para compatibilidad con Excel
+- **Escape:** Automático de comas, comillas y newlines en valores
+- **Timestamp:** Formato `YYYY-MM-DD-HHmmss` en nombre de archivo
+- **Performance:** Instantáneo hasta 5000 registros (browser native APIs)
+- **Dependencies:** `date-fns` (already in project)
+
+#### Prerequisitos
+- Story 2.1 completada (Empresas)
+- Story 2.3 completada (Contactos)
+- Story 2.5 completada (Facturas)
 
 ---
 
