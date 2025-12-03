@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -63,10 +64,12 @@ export default function CompanyDetailPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInactiveContacts, setShowInactiveContacts] = useState(false);
 
   const fetchContacts = async () => {
     try {
-      const res = await fetch(`/api/contacts?companyId=${companyId}`);
+      const url = `/api/contacts?companyId=${companyId}${showInactiveContacts ? '&includeInactive=true' : ''}`;
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setContacts(data);
@@ -101,6 +104,10 @@ export default function CompanyDetailPage() {
     }
     fetchCompany();
   }, [companyId]);
+
+  useEffect(() => {
+    fetchContacts();
+  }, [showInactiveContacts]);
 
   const handleDeactivate = async () => {
     try {
@@ -254,11 +261,25 @@ export default function CompanyDetailPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="contacts">
+        <TabsContent value="contacts" className="space-y-4">
+          <div className="flex items-center gap-2 bg-white rounded-lg border p-4">
+            <Checkbox
+              id="show-inactive-contacts"
+              checked={showInactiveContacts}
+              onCheckedChange={(checked) => setShowInactiveContacts(checked as boolean)}
+            />
+            <label
+              htmlFor="show-inactive-contacts"
+              className="text-sm font-medium text-gray-700 cursor-pointer"
+            >
+              Mostrar contactos inactivos
+            </label>
+          </div>
           <ContactsList
             contacts={contacts}
             companyId={companyId}
             onRefresh={fetchContacts}
+            showInactive={showInactiveContacts}
           />
         </TabsContent>
 

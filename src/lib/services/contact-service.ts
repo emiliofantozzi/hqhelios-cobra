@@ -96,16 +96,27 @@ export async function createContact(data: ContactFormData, tenantId: string) {
  *
  * @param companyId - ID de la empresa
  * @param tenantId - ID del tenant
+ * @param includeInactive - Si incluir contactos inactivos (default: false)
  * @returns Promise con lista de contactos ordenados (primary first)
  */
-export async function getContactsByCompany(companyId: string, tenantId: string) {
+export async function getContactsByCompany(
+  companyId: string,
+  tenantId: string,
+  includeInactive: boolean = false
+) {
   const supabase = await getSupabaseClient(tenantId);
 
-  const { data, error } = await supabase
+  let query = supabase
     .from('contacts')
     .select('*')
-    .eq('company_id', companyId)
-    .eq('is_active', true)
+    .eq('company_id', companyId);
+
+  // Solo filtrar por is_active = true si no queremos incluir inactivos
+  if (!includeInactive) {
+    query = query.eq('is_active', true);
+  }
+
+  const { data, error } = await query
     .order('is_primary_contact', { ascending: false })
     .order('is_escalation_contact', { ascending: false })
     .order('first_name', { ascending: true });

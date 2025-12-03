@@ -51,13 +51,24 @@ interface ContactsListProps {
   contacts: Contact[];
   companyId: string;
   onRefresh: () => void;
+  showInactive?: boolean;
 }
 
-export function ContactsList({ contacts, companyId, onRefresh }: ContactsListProps) {
+export function ContactsList({ contacts, companyId, onRefresh, showInactive = false }: ContactsListProps) {
   const router = useRouter();
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deactivatingContact, setDeactivatingContact] = useState<Contact | null>(null);
+
+  // Filtrar contactos según showInactive
+  const displayedContacts = showInactive
+    ? contacts
+    : contacts.filter((c) => c.is_active);
+
+  // Calcular cantidad de contactos primary activos
+  const activePrimaryCount = contacts.filter(
+    (c) => c.is_primary_contact && c.is_active
+  ).length;
 
   const handleDeactivate = async () => {
     if (!deactivatingContact) return;
@@ -84,7 +95,7 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
     }
   };
 
-  if (contacts.length === 0) {
+  if (displayedContacts.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -92,18 +103,20 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
             <div>
               <CardTitle>Contactos</CardTitle>
               <CardDescription>
-                No hay contactos registrados para esta empresa
+                {showInactive ? 'No hay contactos' : 'No hay contactos registrados para esta empresa'}
               </CardDescription>
             </div>
-            <Button onClick={() => setShowAddDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Contacto
-            </Button>
+            {!showInactive && (
+              <Button onClick={() => setShowAddDialog(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                Agregar Contacto
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           <div className="text-center py-8 text-muted-foreground">
-            <p>Agrega el primer contacto para esta empresa.</p>
+            <p>{showInactive ? 'No hay contactos para mostrar.' : 'Agrega el primer contacto para esta empresa.'}</p>
           </div>
         </CardContent>
 
@@ -126,7 +139,7 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
             <div>
               <CardTitle>Contactos</CardTitle>
               <CardDescription>
-                {contacts.length} contacto{contacts.length !== 1 ? 's' : ''} registrado{contacts.length !== 1 ? 's' : ''}
+                {displayedContacts.length} contacto{displayedContacts.length !== 1 ? 's' : ''} {showInactive ? '' : 'activo'}
               </CardDescription>
             </div>
             <Button onClick={() => setShowAddDialog(true)}>
@@ -137,7 +150,11 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {contacts.map((contact) => (
+            {displayedContacts.map((contact) => {
+              const isOnlyPrimary =
+                contact.is_primary_contact && activePrimaryCount === 1;
+
+              return (
               <div
                 key={contact.id}
                 className="flex items-center justify-between p-4 border rounded-lg"
@@ -150,11 +167,17 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
                     {contact.is_primary_contact && (
                       <Badge variant="default" className="bg-green-600">
                         Principal
+                        {isOnlyPrimary && ' (Único)'}
                       </Badge>
                     )}
                     {contact.is_escalation_contact && (
                       <Badge variant="secondary" className="bg-orange-500 text-white">
                         Escalamiento
+                      </Badge>
+                    )}
+                    {!contact.is_active && (
+                      <Badge variant="outline" className="text-gray-600">
+                        Inactivo
                       </Badge>
                     )}
                   </div>
@@ -177,29 +200,34 @@ export function ContactsList({ contacts, companyId, onRefresh }: ContactsListPro
                   </div>
                 </div>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                      <span className="sr-only">Acciones</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => setEditingContact(contact)}>
-                      <Pencil className="mr-2 h-4 w-4" />
-                      Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => setDeactivatingContact(contact)}
-                    >
-                      <UserMinus className="mr-2 h-4 w-4" />
-                      Desactivar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {contact.is_active ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Acciones</span>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setEditingContact(contact)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive"
+                        onClick={() => !isOnlyPrimary && setDeactivatingContact(contact)}
+                        disabled={isOnlyPrimary}
+                        title={isOnlyPrimary ? 'Debe asignar otro contacto principal primero' : ''}
+                      >
+                        <UserMinus className="mr-2 h-4 w-4" />
+                        Desactivar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : null}
               </div>
-            ))}
+            );
+            })}
           </div>
         </CardContent>
       </Card>

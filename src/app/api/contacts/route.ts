@@ -78,6 +78,7 @@ export async function GET(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const companyId = searchParams.get('companyId');
+    const includeInactive = searchParams.get('includeInactive') === 'true';
 
     if (!companyId) {
       return NextResponse.json(
@@ -86,7 +87,7 @@ export async function GET(request: Request) {
       );
     }
 
-    const contacts = await getContactsByCompany(companyId, tenantId);
+    const contacts = await getContactsByCompany(companyId, tenantId, includeInactive);
 
     return NextResponse.json(contacts);
   } catch (error) {

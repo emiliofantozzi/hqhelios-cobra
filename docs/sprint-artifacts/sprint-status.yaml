@@ -51,8 +51,8 @@ development_status:
   epic-2: in-progress
   2-1-crear-empresas-cliente: done
   2-2-listar-y-editar-empresas: done
-  2-3-gestionar-contactos-de-empresa: in-progress
-  2-4-editar-y-desactivar-contactos: ready-for-dev
+  2-3-gestionar-contactos-de-empresa: done
+  2-4-editar-y-desactivar-contactos: done
   2-5-crear-facturas-manualmente: ready-for-dev
   2-6-gestionar-estados-de-facturas: ready-for-dev
   2-7-importar-facturas-desde-csv: ready-for-dev
