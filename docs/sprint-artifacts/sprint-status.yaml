@@ -48,7 +48,7 @@ development_status:
   # ============================================================
   # Epic 2: CRM y Gestión de Clientes
   # ============================================================
-  epic-2: in-progress
+  epic-2: done
   2-1-crear-empresas-cliente: done
   2-2-listar-y-editar-empresas: done
   2-3-gestionar-contactos-de-empresa: done
@@ -58,7 +58,7 @@ development_status:
   2-7-importar-facturas-desde-csv: done
   2-8-dashboard-basico-con-kpis: done
   2-9-exportar-datos-a-csv: done
-  epic-2-retrospective: optional
+  epic-2-retrospective: done
 
   # ============================================================
   # Epic 3: Motor de Cobranzas Automatizado
@@ -118,8 +118,8 @@ development_status:
 epic_2_detailed_plan:
   epic_id: "epic-2"
   epic_name: "CRM y Gestión de Clientes"
-  phase: "Phase 4 - Implementation"
-  status: "in_progress"
+  phase: "Phase 4 - Implementation COMPLETE"
+  status: "done"
   total_stories: 9
   completed_stories: 9
 
