@@ -68,7 +68,7 @@ development_status:
   # Risk Mitigated: R-001 (Upstash Redis lock)
   epic-3: contexted
   3-1-schema-de-playbooks-y-mensajes: done
-  3-2-builder-de-playbooks: ready-for-dev
+  3-2-builder-de-playbooks: done
   3-3-playbooks-pre-configurados-seed: backlog
   3-4-schema-de-collections: ready-for-dev
   3-5-crear-cobranza-desde-factura: backlog
