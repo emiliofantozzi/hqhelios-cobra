@@ -5,21 +5,8 @@
  */
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { getTenantId } from '@/lib/auth/get-tenant-id';
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-/**
- * Valida que un string sea un UUID v4 válido.
- *
- * @param uuid - String a validar
- * @returns true si es UUID válido, false en caso contrario
- */
-function isValidUUID(uuid: string): boolean {
-  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-  return uuidRegex.test(uuid);
-}
+import { isValidUUID } from '@/lib/utils/validation';
+import { supabaseEnv, validateEnv } from '@/lib/config/env';
 
 /**
  * Crea cliente Supabase con tenant_id configurado para RLS.
@@ -38,15 +25,13 @@ function isValidUUID(uuid: string): boolean {
  * ```
  */
 export async function getSupabaseClient(tenantId: string): Promise<SupabaseClient> {
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase environment variables not configured');
-  }
+  validateEnv();
 
   if (!isValidUUID(tenantId)) {
     throw new Error(`Invalid tenant ID format: ${tenantId}. Expected UUID v4.`);
   }
 
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  const supabase = createClient(supabaseEnv.url!, supabaseEnv.anonKey!, {
     db: {
       schema: 'public',
     },
@@ -119,9 +104,7 @@ export async function getAuthenticatedSupabaseClient(): Promise<SupabaseClient> 
  * ```
  */
 export function getAdminSupabaseClient(): SupabaseClient {
-  if (!supabaseUrl || !supabaseServiceKey) {
-    throw new Error('Supabase environment variables not configured');
-  }
+  validateEnv();
 
-  return createClient(supabaseUrl, supabaseServiceKey);
+  return createClient(supabaseEnv.url!, supabaseEnv.serviceKey!);
 }

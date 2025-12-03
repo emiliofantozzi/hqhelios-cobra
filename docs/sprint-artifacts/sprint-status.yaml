@@ -28,7 +28,7 @@
 # - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-12-01
+generated: 2025-12-03
 project: cobra-bmad
 project_key: cobra-bmad
 tracking_system: file-system
@@ -40,23 +40,24 @@ development_status:
   # ============================================================
   epic-1: contexted
   1-1-configurar-supabase-con-rls-multi-tenant: done
-  1-2-integrar-clerk-con-custom-claims: review
-  1-3-auto-registro-con-creacion-de-tenant: ready-for-dev
-  1-4-seed-data-de-tenant-demo: ready-for-dev
-  epic-1-retrospective: optional
+  1-2-integrar-clerk-con-custom-claims: done
+  1-3-auto-registro-con-creacion-de-tenant: done
+  1-4-seed-data-de-tenant-demo: done
+  epic-1-retrospective: done
 
   # ============================================================
   # Epic 2: CRM y Gestión de Clientes
   # ============================================================
-  epic-2: backlog
-  2-1-crear-empresas-cliente: backlog
-  2-2-listar-y-editar-empresas: backlog
-  2-3-gestionar-contactos-de-empresa: backlog
-  2-4-editar-y-desactivar-contactos: backlog
-  2-5-crear-facturas-manualmente: backlog
-  2-6-gestionar-estados-de-facturas: backlog
-  2-7-importar-facturas-desde-csv: backlog
-  2-8-dashboard-basico-con-kpis: backlog
+  epic-2: in-progress
+  2-1-crear-empresas-cliente: done
+  2-2-listar-y-editar-empresas: done
+  2-3-gestionar-contactos-de-empresa: in-progress
+  2-4-editar-y-desactivar-contactos: ready-for-dev
+  2-5-crear-facturas-manualmente: ready-for-dev
+  2-6-gestionar-estados-de-facturas: ready-for-dev
+  2-7-importar-facturas-desde-csv: ready-for-dev
+  2-8-dashboard-basico-con-kpis: ready-for-dev
+  2-9-exportar-datos-a-csv: ready-for-dev
   epic-2-retrospective: optional
 
   # ============================================================
@@ -105,3 +106,298 @@ development_status:
   6-4-notificaciones-por-email: backlog
   6-5-escalamiento-manual: backlog
   epic-6-retrospective: optional
+
+# ============================================================
+# EPIC 2 DETAILED SPRINT PLANNING
+# ============================================================
+# Generated: 2025-12-02
+# Status: Ready for Phase 4 (Development)
+# Total Stories: 9
+# Implementation Readiness: Approved by Architect
+
+epic_2_detailed_plan:
+  epic_id: "epic-2"
+  epic_name: "CRM y Gestión de Clientes"
+  phase: "Phase 4 - Implementation"
+  status: "ready_for_dev"
+  total_stories: 9
+  completed_stories: 1
+
+  # ============================================================
+  # CRITICAL STORY SEQUENCE
+  # ============================================================
+  # Stories MUST be executed in this order to respect dependencies
+  # Each layer depends on completion of previous layer
+
+  story_sequence:
+    foundation_layer:
+      # MUST execute first - creates empresas table/UI
+      - "2.1"
+
+    dependency_layer_1:
+      # Depends on 2.1 (empresas must exist)
+      - "2.3"
+
+    core_functionality:
+      # Depends on 2.1 (empresas) and 2.3 (contactos)
+      - "2.5"
+
+    state_management:
+      # Depends on 2.5 (invoices must exist for state transitions)
+      - "2.6"
+
+    parallel_features:
+      # Can execute concurrently after 2.6 is complete
+      # All depend on foundation being ready
+      - "2.2"  # Edit empresas (needs 2.1 + 2.6 state management)
+      - "2.4"  # Edit contactos (needs 2.3 + 2.6 state management)
+      - "2.7"  # CSV import (needs 2.1, 2.5, 2.6)
+      - "2.9"  # CSV export (needs 2.1, 2.3, 2.5)
+
+    final_integration:
+      # Dashboard runs last - depends on all data being available
+      - "2.8"
+
+  # ============================================================
+  # STORY DETAILS
+  # ============================================================
+
+  stories:
+    - id: "2.1"
+      title: "Crear Empresas Cliente"
+      status: "done"
+      priority: "critical"
+      dependencies: []
+      blocks: ["2.2", "2.3", "2.4", "2.5", "2.7", "2.9"]
+      estimated_points: 5
+      acceptance_criteria_count: 8
+      notes: "Foundation story - MUST execute first"
+
+    - id: "2.2"
+      title: "Listar y Editar Empresas"
+      status: "ready_for_dev"
+      priority: "high"
+      dependencies: ["2.1", "2.6"]
+      blocks: []
+      estimated_points: 3
+      acceptance_criteria_count: 7
+      notes: "Can run in parallel with 2.4, 2.7, 2.9 after 2.6 is done"
+
+    - id: "2.3"
+      title: "Gestionar Contactos de Empresa"
+      status: "ready_for_dev"
+      priority: "critical"
+      dependencies: ["2.1"]
+      blocks: ["2.4", "2.5", "2.7", "2.9"]
+      estimated_points: 5
+      acceptance_criteria_count: 9
+      notes: "Execute immediately after 2.1"
+
+    - id: "2.4"
+      title: "Editar y Desactivar Contactos"
+      status: "ready_for_dev"
+      priority: "high"
+      dependencies: ["2.3", "2.6"]
+      blocks: []
+      estimated_points: 3
+      acceptance_criteria_count: 6
+      notes: "Can run in parallel with 2.2, 2.7, 2.9 after 2.6 is done"
+
+    - id: "2.5"
+      title: "Crear Facturas Manualmente"
+      status: "ready_for_dev"
+      priority: "critical"
+      dependencies: ["2.1", "2.3"]
+      blocks: ["2.6", "2.7", "2.8", "2.9"]
+      estimated_points: 5
+      acceptance_criteria_count: 10
+      notes: "Core invoice functionality - blocks state management"
+
+    - id: "2.6"
+      title: "Gestionar Estados de Facturas"
+      status: "ready_for_dev"
+      priority: "critical"
+      dependencies: ["2.5"]
+      blocks: ["2.2", "2.4", "2.7", "2.8", "2.9"]
+      estimated_points: 5
+      acceptance_criteria_count: 9
+      notes: "State machine implementation - blocks parallel features"
+
+    - id: "2.7"
+      title: "Importar Facturas desde CSV"
+      status: "ready_for_dev"
+      priority: "medium"
+      dependencies: ["2.1", "2.5", "2.6"]
+      blocks: []
+      estimated_points: 5
+      acceptance_criteria_count: 8
+      notes: "Can run in parallel with 2.2, 2.4, 2.9 after 2.6 is done"
+
+    - id: "2.8"
+      title: "Dashboard Básico con KPIs"
+      status: "ready_for_dev"
+      priority: "high"
+      dependencies: ["2.1", "2.3", "2.5", "2.6"]
+      blocks: []
+      estimated_points: 5
+      acceptance_criteria_count: 8
+      notes: "Execute LAST - depends on all data"
+
+    - id: "2.9"
+      title: "Exportar Datos a CSV"
+      status: "ready_for_dev"
+      priority: "high"
+      dependencies: ["2.1", "2.3", "2.5"]
+      blocks: []
+      estimated_points: 3
+      acceptance_criteria_count: 7
+      notes: "NEW - Required for MVP per FR11. Can run in parallel with 2.2, 2.4, 2.7"
+
+  # ============================================================
+  # RISK MITIGATION
+  # ============================================================
+
+  risk_mitigation:
+    - risk: "Dependency chain could cause delays if stories fail"
+      severity: "medium"
+      mitigation: "Strict sequence enforcement - 2.1 → 2.3 → 2.5 → 2.6 → parallel features"
+      status: "mitigated"
+
+    - risk: "State machine complexity in 2.6 could introduce bugs"
+      severity: "medium"
+      mitigation: "Story 2.6 includes comprehensive state transition table and validation rules"
+      status: "mitigated"
+
+    - risk: "CSV import/export could have encoding issues with Spanish characters"
+      severity: "low"
+      mitigation: "Stories 2.7 and 2.9 specify UTF-8 with BOM for Excel compatibility"
+      status: "mitigated"
+
+    - risk: "Multi-tenancy could be bypassed if RLS not properly enforced"
+      severity: "high"
+      mitigation: "All stories enforce RLS at database level - tested in Story 1.1"
+      status: "mitigated"
+
+  # ============================================================
+  # EXECUTION PLAN
+  # ============================================================
+
+  execution_plan:
+    current_phase: "Phase 4 - Development"
+    next_story: "2.2"
+    current_story: "2.1"
+    current_story_status: "done"
+
+    recommended_workflow:
+      - step: 1
+        action: "Dev agent executes Story 2.1"
+        estimated_time: "5 hours"
+        deliverables: ["Companies CRUD", "RLS policies", "UI pages", "Tests"]
+
+      - step: 2
+        action: "Code review Story 2.1"
+        estimated_time: "1 hour"
+        deliverables: ["Review feedback", "Fixes applied"]
+
+      - step: 3
+        action: "Mark 2.1 as DONE in sprint-status.yaml"
+        estimated_time: "5 min"
+        deliverables: ["Updated sprint status"]
+
+      - step: 4
+        action: "Dev agent executes Story 2.3"
+        estimated_time: "5 hours"
+        deliverables: ["Contacts CRUD", "RLS policies", "UI pages", "Tests"]
+
+      - step: 5
+        action: "Continue sequence: 2.5 → 2.6 → parallel (2.2, 2.4, 2.7, 2.9) → 2.8"
+        estimated_time: "~30 hours total"
+        deliverables: ["All Epic 2 functionality complete"]
+
+      - step: 6
+        action: "Execute Epic 2 retrospective"
+        estimated_time: "1 hour"
+        deliverables: ["Lessons learned", "Process improvements"]
+
+  # ============================================================
+  # VALIDATION CHECKLIST
+  # ============================================================
+
+  validation_checklist:
+    epic_level:
+      - item: "Epic 2 file exists and is complete"
+        status: "✓"
+      - item: "All functional requirements mapped to stories"
+        status: "✓"
+      - item: "FR11 (CSV export) clarified with PO"
+        status: "✓"
+      - item: "Business value clear for each story"
+        status: "✓"
+      - item: "MVP scope defined"
+        status: "✓"
+
+    story_level:
+      - item: "All 9 stories have clear titles"
+        status: "✓"
+      - item: "All stories have acceptance criteria (6-10 AC each)"
+        status: "✓"
+      - item: "All stories have technical specifications"
+        status: "✓"
+      - item: "All stories have Definition of Done"
+        status: "✓"
+      - item: "Dependencies explicitly documented"
+        status: "✓"
+      - item: "No circular dependencies identified"
+        status: "✓"
+
+    technical_validation:
+      - item: "Database schema defined for all entities"
+        status: "✓"
+      - item: "RLS policies specified for all tables"
+        status: "✓"
+      - item: "API routes documented"
+        status: "✓"
+      - item: "UI components specified"
+        status: "✓"
+      - item: "Form validations using Zod schemas"
+        status: "✓"
+
+    dependency_validation:
+      - item: "Critical path identified: 2.1 → 2.3 → 2.5 → 2.6"
+        status: "✓"
+      - item: "Parallel work opportunities identified"
+        status: "✓"
+      - item: "No blocking issues"
+        status: "✓"
+      - item: "Sequence documented in this file"
+        status: "✓"
+
+  # ============================================================
+  # PHASE 4 APPROVAL
+  # ============================================================
+
+  phase_4_approval:
+    approved: true
+    approved_by: "Scrum Master (Bob)"
+    approved_date: "2025-12-02"
+
+    approval_notes: |
+      Epic 2 is READY for Phase 4 (Development).
+
+      All prerequisites met:
+      - 9 stories created and validated
+      - Story 2.9 added per Product Owner decision (FR11)
+      - Dependencies mapped and sequenced
+      - Risks identified and mitigated
+      - Implementation readiness report reviewed
+
+      Dev agent can start with Story 2.1 immediately.
+
+      Execution sequence: 2.1 → 2.3 → 2.5 → 2.6 → (2.2, 2.4, 2.7, 2.9) → 2.8
+
+    next_steps:
+      - "Dev agent: Execute Story 2.1 in next session"
+      - "Follow strict sequencing to avoid blocking issues"
+      - "Mark stories as DONE in sprint-status.yaml as completed"
+      - "Run code review after each story"
+      - "Execute retrospective when Epic 2 is complete"
