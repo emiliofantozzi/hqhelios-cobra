@@ -182,6 +182,9 @@ La sesión de brainstorming ya estableció el stack tecnológico completo con ju
 **2. Logging y Audit Trail:**
 - `created_at`, `updated_at` en todas las entidades
 - Tracking de quién cambió estado de facturas (CustomerResponse.processed_by_user_id)
+- **InvoiceStatusHistory:** Historial APPEND-ONLY de cambios de estado de facturas
+  - Registra: old_status, new_status, changed_by, note, metadata
+  - RLS: SELECT/INSERT permitidos, UPDATE/DELETE prohibidos (inmutable)
 - Historial completo de comunicación (SentMessages con delivery_status)
 - Logging del worker: cada acción del Collection engine registrada
 
@@ -520,6 +523,34 @@ MVP requiere velocidad de desarrollo y deployment. Stack debe soportar multi-ten
 
 ### Configuraciones Específicas del Sistema
 
+**Invoice Status State Machine (Story 2.6):**
+```typescript
+// Estados de pago de factura
+type InvoiceStatus =
+  | 'pendiente'       // Estado inicial
+  | 'fecha_confirmada' // Cliente confirmó fecha de pago
+  | 'pagada'          // TERMINAL - Pago recibido
+  | 'escalada'        // Escalado a contacto de escalación
+  | 'suspendida'      // Cobranza pausada temporalmente
+  | 'cancelada';      // TERMINAL - Factura cancelada
+
+// Transiciones permitidas
+const ALLOWED_TRANSITIONS: Record<InvoiceStatus, InvoiceStatus[]> = {
+  pendiente: ['fecha_confirmada', 'pagada', 'escalada', 'suspendida', 'cancelada'],
+  fecha_confirmada: ['pagada', 'escalada', 'suspendida', 'cancelada'],
+  escalada: ['pendiente', 'pagada', 'suspendida', 'cancelada'],
+  suspendida: ['pendiente', 'cancelada'],
+  pagada: [],      // Terminal - sin transiciones
+  cancelada: [],   // Terminal - sin transiciones
+};
+
+// Validaciones por transición
+// → pagada: requiere paymentReference, paidDate (≤hoy, ≥issueDate)
+// → fecha_confirmada: requiere confirmedPaymentDate (≥hoy)
+// → suspendida, cancelada: requiere note (motivo)
+// → escalada, pendiente: sin campos adicionales
+```
+
 **Rate Limiting:**
 ```typescript
 // API Routes Protection
@@ -758,9 +789,10 @@ model Invoice {
   createdAt            DateTime @default(now()) @map("created_at")
   updatedAt            DateTime @default(now()) @updatedAt @map("updated_at")
 
-  tenant      Tenant       @relation(fields: [tenantId], references: [id])
-  company     Company      @relation(fields: [companyId], references: [id], onDelete: Cascade)
-  collections Collection[]
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id])
+  company       Company                @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  collections   Collection[]
+  statusHistory InvoiceStatusHistory[]
 
   @@unique([tenantId, invoiceNumber])
   @@index([tenantId])
@@ -768,6 +800,25 @@ model Invoice {
   @@index([paymentStatus, dueDate])
   @@index([dueDate])
   @@map("invoices")
+}
+
+model InvoiceStatusHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  invoiceId String   @map("invoice_id") @db.Uuid
+  oldStatus String?  @map("old_status") @db.VarChar(50)
+  newStatus String   @map("new_status") @db.VarChar(50)
+  changedBy String   @map("changed_by") @db.VarChar(255)
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+  note      String?  @db.Text
+  metadata  Json?    @db.JsonB
+
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([invoiceId])
+  @@index([changedAt])
+  @@map("invoice_status_history")
 }
 
 model Playbook {
@@ -1854,6 +1905,19 @@ Todas las 5 fases con 188 historias tienen soporte arquitectónico:
 
 ---
 
-**Documento Actualizado:** 2025-12-01
+**Documento Actualizado:** 2025-12-03
 **Steps Completados:** [1, 2, 3, 4, 5, 6, 7, 8]
 **Estado:** ✅ COMPLETO - LISTO PARA FASE SIGUIENTE
+
+---
+
+## Changelog
+
+### 2025-12-03 - Story 2.6: Gestionar Estados de Facturas
+- Agregado modelo `InvoiceStatusHistory` al schema Prisma
+- Documentado State Machine de estados de factura con transiciones permitidas
+- RLS policies para `invoice_status_history` (APPEND-ONLY: SELECT/INSERT, no UPDATE/DELETE)
+- API endpoint: `PATCH /api/invoices/[invoiceId]/status`
+- API endpoint: `GET /api/invoices/[invoiceId]/history`
+- Componentes UI: InvoiceStatusBadge, InvoiceActions, dialogs de transición
+- Página de detalle de factura: `/invoices/[invoiceId]`

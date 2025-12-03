@@ -21,9 +21,10 @@ model Tenant {
   createdAt       DateTime @default(now()) @map("created_at")
   updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
 
-  users     User[]
-  companies Company[]
-  invoices  Invoice[]
+  users                User[]
+  companies            Company[]
+  invoices             Invoice[]
+  invoiceStatusHistory InvoiceStatusHistory[]
 
   @@map("tenants")
 }
@@ -112,12 +113,32 @@ model Invoice {
   createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt            DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  company Company @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  tenant        Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  company       Company                @relation(fields: [companyId], references: [id], onDelete: Restrict)
+  statusHistory InvoiceStatusHistory[]
 
   @@unique([tenantId, invoiceNumber], name: "invoices_tenant_id_invoice_number_key")
   @@index([tenantId, paymentStatus], name: "invoices_tenant_id_payment_status_idx")
   @@index([tenantId, dueDate], name: "invoices_tenant_id_due_date_idx")
   @@index([companyId], name: "invoices_company_id_idx")
   @@map("invoices")
+}
+
+model InvoiceStatusHistory {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  invoiceId String   @map("invoice_id") @db.Uuid
+  oldStatus String?  @map("old_status") @db.VarChar(50)
+  newStatus String   @map("new_status") @db.VarChar(50)
+  changedBy String   @map("changed_by") @db.VarChar(255) // Clerk User ID
+  changedAt DateTime @default(now()) @map("changed_at") @db.Timestamptz(6)
+  note      String?  @db.Text
+  metadata  Json?    @db.JsonB
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  @@index([invoiceId, changedAt(sort: Desc)], name: "invoice_status_history_invoice_changed_at_idx")
+  @@index([tenantId], name: "invoice_status_history_tenant_id_idx")
+  @@map("invoice_status_history")
 }

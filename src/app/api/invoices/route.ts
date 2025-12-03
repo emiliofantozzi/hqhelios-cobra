@@ -8,7 +8,11 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getTenantId } from '@/lib/auth/get-tenant-id';
 import { createInvoiceSchema } from '@/lib/validations/invoice-schema';
-import { createInvoice, getInvoices } from '@/lib/services/invoice-service';
+import {
+  createInvoice,
+  getInvoices,
+  createInitialStatusHistory,
+} from '@/lib/services/invoice-service';
 
 /**
  * GET /api/invoices
@@ -90,7 +94,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // 5. Retornar factura creada
+    // 5. Crear registro inicial en status_history
+    if (result.invoice?.id) {
+      await createInitialStatusHistory(result.invoice.id, tenantId, userId);
+    }
+
+    // 6. Retornar factura creada
     return NextResponse.json(result.invoice, { status: 201 });
   } catch (error) {
     console.error('Error in POST /api/invoices:', error);

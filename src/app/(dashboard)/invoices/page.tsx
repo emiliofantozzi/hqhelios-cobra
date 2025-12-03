@@ -3,14 +3,18 @@
 /**
  * Pagina de lista de facturas
  * Story 2.5: Crear Facturas Manualmente
+ * Story 2.6: Gestionar Estados de Facturas
  *
  * @module app/(dashboard)/invoices/page
  */
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
+import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge';
+import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
 
 interface Invoice {
   id: string;
@@ -74,31 +78,10 @@ function LoadingState() {
 }
 
 /**
- * Badge para estado de pago
- */
-function StatusBadge({ status }: { status: string }) {
-  const styles: Record<string, string> = {
-    pendiente: 'bg-yellow-100 text-yellow-800',
-    fecha_confirmada: 'bg-blue-100 text-blue-800',
-    pagada: 'bg-green-100 text-green-800',
-    escalada: 'bg-red-100 text-red-800',
-    suspendida: 'bg-gray-100 text-gray-800',
-    cancelada: 'bg-gray-100 text-gray-500',
-  };
-
-  return (
-    <span
-      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${styles[status] || 'bg-gray-100 text-gray-800'}`}
-    >
-      {status.replace('_', ' ')}
-    </span>
-  );
-}
-
-/**
  * Pagina principal de facturas
  */
 export default function InvoicesPage() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -164,9 +147,13 @@ export default function InvoicesPage() {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {invoices.map((invoice) => (
-                  <tr key={invoice.id} className="hover:bg-gray-50">
+                  <tr
+                    key={invoice.id}
+                    className="hover:bg-gray-50 cursor-pointer"
+                    onClick={() => router.push(`/invoices/${invoice.id}`)}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">
+                      <div className="text-sm font-medium text-blue-600 hover:underline">
                         {invoice.invoice_number}
                       </div>
                     </td>
@@ -191,7 +178,7 @@ export default function InvoicesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <StatusBadge status={invoice.payment_status} />
+                      <InvoiceStatusBadge status={invoice.payment_status as InvoiceStatus} />
                     </td>
                   </tr>
                 ))}
