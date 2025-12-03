@@ -7,16 +7,15 @@
  */
 import { Webhook } from 'svix';
 import { headers } from 'next/headers';
-import { WebhookEvent, clerkClient } from '@clerk/nextjs/server';
+import { WebhookEvent } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
-import { generateSlug, generateTenantName } from '@/lib/utils/generate-slug';
+import { provisionTenantForUser } from '@/lib/auth/provision-tenant';
 import {
   supabaseEnv,
   clerkEnv,
   validateEnv,
   validateClerkEnv,
 } from '@/lib/config/env';
-import { getTenantConfig } from '@/lib/config/tenant-defaults';
 
 export async function POST(request: Request) {
   // Validar configuración de Clerk
@@ -69,143 +68,23 @@ export async function POST(request: Request) {
       return new Response('No email provided', { status: 400 });
     }
 
-    // FIX 5: Validate email format and length
+    // Validate email format and length
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email) || email.length > 255) {
       console.error('Invalid email format or length:', email);
       return new Response('Invalid email format', { status: 400 });
     }
 
-    console.log(`Processing user.created for: ${email}`);
-
-    // FIX 3: Idempotency check - verify user doesn't already exist
-    // Usar maybeSingle() en vez de single() para evitar error si no existe
-    const { data: existingUser, error: checkError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('clerk_user_id', clerkUserId)
-      .maybeSingle();
-
-    // Si hay error al verificar, loguear pero continuar
-    if (checkError) {
-      console.error('Error checking existing user:', checkError);
-      // No bloqueamos - continuamos con la creación y dejamos que
-      // el constraint de DB maneje la unicidad (más seguro)
-    }
-
-    // Si usuario ya existe, skip (idempotencia)
-    if (existingUser) {
-      console.log(
-        `User ${clerkUserId} already exists, skipping creation (idempotency)`
-      );
-      return new Response('User already processed', { status: 200 });
-    }
-
-    // Variables to track created resources for rollback
-    let createdTenantId: string | null = null;
-    let createdUserId: string | null = null;
+    console.log(`Processing user.created webhook for: ${email}`);
 
     try {
-      // FIX 11: Validate first_name and last_name length
-      const firstName = (first_name || '').substring(0, 100);
-      const lastName = (last_name || '').substring(0, 100);
-
-      // 1. Generar slug unico para el tenant
-      const slug = generateSlug(email);
-      const tenantName = generateTenantName(email);
-
-      console.log(`Generated slug: ${slug}, name: ${tenantName}`);
-
-      // 2. Crear tenant con configuración por defecto
-      const tenantConfig = getTenantConfig();
-      const { data: tenant, error: tenantError } = await supabase
-        .from('tenants')
-        .insert({
-          name: tenantName,
-          slug: slug,
-          ...tenantConfig,
-        })
-        .select()
-        .single();
-
-      // FIX 1: Check tenant exists before using tenant.id
-      if (tenantError || !tenant) {
-        console.error('Error creating tenant:', tenantError);
-        throw new Error(
-          `Failed to create tenant: ${tenantError?.message || 'Unknown error'}`
-        );
-      }
-
-      createdTenantId = tenant.id;
-      console.log(`Tenant created: ${tenant.id}`);
-
-      // 3. Crear usuario asociado al tenant
-      const { data: user, error: userError } = await supabase
-        .from('users')
-        .insert({
-          clerk_user_id: clerkUserId,
-          tenant_id: tenant.id,
-          email: email,
-          first_name: firstName,
-          last_name: lastName,
-          role: 'admin',
-          is_active: true,
-        })
-        .select('id')
-        .single();
-
-      if (userError || !user) {
-        console.error('Error creating user:', userError);
-
-        // Si es error de duplicado (race condition), considerarlo éxito
-        if (userError?.code === '23505') {
-          console.warn(
-            `User ${clerkUserId} already exists (race condition detected). ` +
-              `This is expected if webhooks arrived simultaneously.`
-          );
-          return new Response('User already processed', { status: 200 });
-        }
-
-        // Cualquier otro error → rollback
-        if (createdTenantId) {
-          await supabase.from('tenants').delete().eq('id', createdTenantId);
-          console.log(`Rolled back tenant: ${createdTenantId}`);
-        }
-        throw new Error(
-          `Failed to create user: ${userError?.message || 'Unknown error'}`
-        );
-      }
-
-      createdUserId = user.id;
-      console.log(`User created for tenant: ${tenant.id}`);
-
-      // FIX 2: Wrap Clerk metadata update in try-catch with rollback
-      try {
-        const client = await clerkClient();
-        await client.users.updateUserMetadata(clerkUserId, {
-          publicMetadata: {
-            tenant_id: tenant.id,
-          },
-        });
-
-        console.log(`Clerk metadata updated for user: ${clerkUserId}`);
-      } catch (clerkError) {
-        console.error('Error updating Clerk metadata:', clerkError);
-
-        // Rollback: Delete user and tenant
-        if (createdUserId) {
-          await supabase.from('users').delete().eq('id', createdUserId);
-          console.log(`Rolled back user: ${createdUserId}`);
-        }
-        if (createdTenantId) {
-          await supabase.from('tenants').delete().eq('id', createdTenantId);
-          console.log(`Rolled back tenant: ${createdTenantId}`);
-        }
-
-        throw new Error(
-          `Failed to update Clerk metadata: ${clerkError instanceof Error ? clerkError.message : 'Unknown error'}`
-        );
-      }
+      // Usar función compartida para provisionar tenant y usuario
+      await provisionTenantForUser({
+        id: clerkUserId,
+        email,
+        firstName: first_name,
+        lastName: last_name,
+      });
 
       return new Response('User and tenant created successfully', {
         status: 200,

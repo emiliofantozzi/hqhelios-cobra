@@ -4,16 +4,17 @@
  * @module lib/auth/get-tenant-id
  */
 import { auth, clerkClient } from '@clerk/nextjs/server';
-import { createClient } from '@supabase/supabase-js';
-import { getSupabaseClient } from '@/lib/db/supabase'; // FIX 18: Regular import instead of dynamic
+import { getSupabaseClient } from '@/lib/db/supabase';
 import { isValidUUID } from '@/lib/utils/validation';
-import '@/types/clerk.types'; // Importar extension de tipos
+import { provisionTenantForUser } from '@/lib/auth/provision-tenant';
+import '@/types/clerk.types';
 
 /**
  * Obtiene el tenant_id del usuario actualmente autenticado.
+ * Si el webhook no ha procesado aún, provisiona el tenant on-demand (JIT).
  *
  * @returns Promise con el tenant_id del usuario
- * @throws {Error} Si el usuario no esta autenticado o no tiene tenant asignado
+ * @throws {Error} Si el usuario no esta autenticado
  *
  * @example
  * ```ts
@@ -32,11 +33,23 @@ export async function getTenantId(): Promise<string> {
   const client = await clerkClient();
   const user = await client.users.getUser(userId);
 
-  // FIX 17: Add null safety on publicMetadata
-  const tenantId = user.publicMetadata?.tenant_id as string | undefined;
+  let tenantId = user.publicMetadata?.tenant_id as string | undefined;
 
+  // JIT Fallback: Si el webhook no ha procesado, provisionar ahora
   if (!tenantId) {
-    throw new Error('User does not have a tenant assigned');
+    const email = user.emailAddresses[0]?.emailAddress;
+
+    if (!email) {
+      throw new Error('User has no email address');
+    }
+
+    console.log(`JIT provisioning tenant for user: ${userId}`);
+    tenantId = await provisionTenantForUser({
+      id: userId,
+      email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+    });
   }
 
   // Validar formato UUID

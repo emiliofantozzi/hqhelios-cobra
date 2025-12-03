@@ -23,7 +23,7 @@ export default function DashboardGroupLayout({
             </Link>
           </div>
           <div className="flex items-center gap-4">
-            <UserButton afterSignOutUrl="/" />
+            <UserButton />
           </div>
         </div>
       </header>
@@ -51,12 +51,14 @@ export default function DashboardGroupLayout({
             >
               Facturas
             </Link>
+{/* TODO: Descomentar cuando Epic 3 esté implementada
             <Link
               href="/collections"
               className="block px-4 py-2 rounded-md text-gray-700 hover:bg-gray-100"
             >
               Cobranzas
             </Link>
+*/}
           </nav>
         </aside>
 
