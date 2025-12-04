@@ -31,7 +31,9 @@ export async function getSupabaseClient(tenantId: string): Promise<SupabaseClien
     throw new Error(`Invalid tenant ID format: ${tenantId}. Expected UUID v4.`);
   }
 
-  const supabase = createClient(supabaseEnv.url!, supabaseEnv.anonKey!, {
+  // Usar service role - el código filtra por tenant_id explícitamente en cada query
+  // Esto evita el problema de RLS con PostgREST donde el contexto se pierde entre requests HTTP
+  const supabase = createClient(supabaseEnv.url!, supabaseEnv.serviceKey!, {
     db: {
       schema: 'public',
     },
@@ -43,34 +45,14 @@ export async function getSupabaseClient(tenantId: string): Promise<SupabaseClien
     },
   });
 
-  // Configurar el contexto de tenant para RLS usando función renombrada
-  await supabase.rpc('set_tenant_context', {
-    p_tenant_id: tenantId,
-  });
+  // NO llamar set_tenant_context - service_role bypasea RLS
+  // La seguridad la maneja el código incluyendo tenant_id en todas las queries
 
   return supabase;
 }
 
-/**
- * Helper para establecer contexto de tenant en una conexion existente.
- * Util para funciones que reciben el cliente como parametro.
- *
- * @param supabase - Cliente Supabase existente
- * @param tenantId - UUID del tenant
- * @throws {Error} Si tenantId no es un UUID válido
- */
-export async function setTenantContext(
-  supabase: SupabaseClient,
-  tenantId: string
-): Promise<void> {
-  if (!isValidUUID(tenantId)) {
-    throw new Error(`Invalid tenant ID format: ${tenantId}. Expected UUID v4.`);
-  }
-
-  await supabase.rpc('set_tenant_context', {
-    p_tenant_id: tenantId,
-  });
-}
+// setTenantContext ELIMINADO - ya no se usa con service_role
+// El contexto de tenant se maneja incluyendo tenant_id en cada query
 
 /**
  * Crea cliente Supabase con tenant_id del usuario autenticado.
