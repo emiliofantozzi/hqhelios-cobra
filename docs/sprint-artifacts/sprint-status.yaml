@@ -28,7 +28,7 @@
 # - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
 # - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
 
-generated: 2025-12-03
+generated: 2025-12-04
 project: cobra-bmad
 project_key: cobra-bmad
 tracking_system: file-system
@@ -36,9 +36,9 @@ story_location: '{project-root}/docs/sprint-artifacts'
 
 development_status:
   # ============================================================
-  # Epic 1: Foundation Setup
+  # Epic 1: Foundation Setup ✅ COMPLETED
   # ============================================================
-  epic-1: contexted
+  epic-1: done
   1-1-configurar-supabase-con-rls-multi-tenant: done
   1-2-integrar-clerk-con-custom-claims: done
   1-3-auto-registro-con-creacion-de-tenant: done
@@ -46,7 +46,7 @@ development_status:
   epic-1-retrospective: done
 
   # ============================================================
-  # Epic 2: CRM y Gestión de Clientes
+  # Epic 2: CRM y Gestión de Clientes ✅ COMPLETED
   # ============================================================
   epic-2: done
   2-1-crear-empresas-cliente: done
@@ -61,19 +61,21 @@ development_status:
   epic-2-retrospective: done
 
   # ============================================================
-  # Epic 3: Motor de Cobranzas Automatizado
+  # Epic 3: Motor de Cobranzas Automatizado 🟡 IN PROGRESS
   # ============================================================
   # Party Mode Session: 2025-12-03
   # Gaps Resolved: C1 (IMessageService), C2 (State Machine), C3 (Rate Limiting)
   # Risk Mitigated: R-001 (Upstash Redis lock)
-  epic-3: contexted
+  # Schema Refinement Sprint: 2025-12-04 (COMPLETED)
+  # Implementation Readiness Review: 2025-12-04 (APPROVED)
+  epic-3: in-progress
   3-1-schema-de-playbooks-y-mensajes: done
   3-2-builder-de-playbooks: done
   3-3-playbooks-pre-configurados-seed: done
-  3-4-schema-de-collections: ready-for-dev
-  3-5-crear-cobranza-desde-factura: backlog
+  3-4-schema-de-collections: done
+  3-5-activar-playbook-en-factura: backlog
   3-6-worker-de-procesamiento-automatico: backlog
-  3-7-control-manual-de-cobranzas: backlog
+  3-7-control-manual-de-playbook-activo: backlog
   epic-3-retrospective: optional
 
   # ============================================================
@@ -518,6 +520,8 @@ epic_3_detailed_plan:
   status: "in-progress"
   total_stories: 7
   completed_stories: 3
+  next_story: "3.4"
+  next_story_status: "ready-for-dev"
 
   # ============================================================
   # PARTY MODE DECISIONS (2025-12-03)
@@ -601,13 +605,14 @@ epic_3_detailed_plan:
 
     - id: "3.2"
       title: "Builder de Playbooks"
-      status: "backlog"
+      status: "done"
       priority: "high"
       dependencies: ["3.1"]
       blocks: ["3.3"]
       estimated_points: 8
       acceptance_criteria_count: 6
-      notes: "Complex UI with @dnd-kit drag & drop"
+      completed_date: "2025-12-03"
+      notes: "COMPLETED - Complex UI with @dnd-kit drag & drop"
 
     - id: "3.3"
       title: "Playbooks Pre-configurados (Seed)"
@@ -622,23 +627,24 @@ epic_3_detailed_plan:
 
     - id: "3.4"
       title: "Schema de Collections"
-      status: "backlog"
+      status: "ready-for-dev"
       priority: "critical"
       dependencies: ["epic-2-complete"]
       blocks: ["3.5", "3.6", "3.7"]
       estimated_points: 3
       acceptance_criteria_count: 4
-      notes: "Can run parallel with 3.1"
+      validated_date: "2025-12-04"
+      notes: "READY FOR DEV - Validated post-documentation changes. Story file: docs/sprint-artifacts/3-4-schema-de-collections.md"
 
     - id: "3.5"
-      title: "Crear Cobranza desde Factura"
+      title: "Activar Playbook en Factura"
       status: "backlog"
       priority: "high"
       dependencies: ["3.3", "3.4"]
       blocks: ["3.6", "3.7"]
       estimated_points: 5
       acceptance_criteria_count: 5
-      notes: "Modal + API for creating collections"
+      notes: "UI factura-céntrica - usuario activa playbook desde vista de factura"
 
     - id: "3.6"
       title: "Worker de Procesamiento Automático"
@@ -655,14 +661,14 @@ epic_3_detailed_plan:
         - "UPSTASH_REDIS_REST_TOKEN env var"
 
     - id: "3.7"
-      title: "Control Manual de Cobranzas"
+      title: "Control Manual de Playbook Activo"
       status: "backlog"
       priority: "high"
       dependencies: ["3.5"]
       blocks: []
       estimated_points: 5
       acceptance_criteria_count: 5
-      notes: "Pause/Resume/Complete + Timeline UI"
+      notes: "Controles dentro de vista factura: Pausar/Reanudar/Completar + Timeline"
 
   # ============================================================
   # TECHNICAL PREREQUISITES
@@ -727,51 +733,58 @@ epic_3_detailed_plan:
 
   execution_plan:
     current_phase: "Phase 4 - Development IN PROGRESS"
+    last_completed_story: "3.3"
     next_story: "3.4"
+    next_story_status: "ready-for-dev - validated 2025-12-04, ready for implementation"
     current_story: null
-    current_story_status: "3.1 completed, 3.4 ready"
+
+    # PAUSA: 2025-12-04 - Documentación revisada y actualizada
+    # Implementation Readiness Report: APROBADO
+    # Próximo paso: Validar/Implementar Story 3.4
 
     recommended_workflow:
       - step: 1
-        action: "Setup Upstash Redis account"
-        estimated_time: "30 min"
-        deliverables: ["Upstash account", "Redis database created"]
-        blocking: true
+        action: "COMPLETED - Stories 3.1, 3.2, 3.3 done"
+        status: "done"
+        completed_date: "2025-12-03"
+        deliverables: ["Playbook schema", "Playbook Builder UI", "3 default playbooks"]
 
       - step: 2
-        action: "Add UPSTASH env vars to Vercel"
-        estimated_time: "10 min"
-        deliverables: ["Environment variables configured"]
-        blocking: true
-
-      - step: 3
-        action: "Install npm packages (@dnd-kit, @upstash/redis)"
-        estimated_time: "10 min"
-        deliverables: ["Dependencies installed"]
-        blocking: true
-
-      - step: 4
-        action: "Dev agent executes Story 3.1 (Playbook Schema)"
-        estimated_time: "3 hours"
-        deliverables: ["Prisma migration", "RLS policies", "Tests"]
-
-      - step: 5
-        action: "Dev agent executes Story 3.4 (Collection Schema) - parallel if capacity"
+        action: "NEXT SESSION - Implement Story 3.4 (Collection Schema)"
+        status: "ready"
+        validated: "2025-12-04"
         estimated_time: "3 hours"
         deliverables: ["Prisma migration", "RLS policies", "Conditional UNIQUE index"]
+        story_file: "docs/sprint-artifacts/3-4-schema-de-collections.md"
+
+      - step: 3
+        action: "Create Story 3.5 (Activar Playbook en Factura)"
+        status: "pending"
+        estimated_time: "5 hours"
+        deliverables: ["API endpoint", "Modal UI in invoice detail", "Playbook selector"]
+
+      - step: 4
+        action: "Setup Upstash Redis account (BEFORE Story 3.6)"
+        status: "pending"
+        estimated_time: "30 min"
+        deliverables: ["Upstash account", "Redis database created", "Env vars in Vercel"]
+        blocking: true
+
+      - step: 5
+        action: "Implement Story 3.6 (Worker de Procesamiento Automático)"
+        status: "pending"
+        estimated_time: "8 hours"
+        deliverables: ["Cron job", "Rate limiting", "MockMessageService", "Redis lock"]
 
       - step: 6
-        action: "Dev agent executes Story 3.2 (Playbook Builder)"
-        estimated_time: "8 hours"
-        deliverables: ["UI pages", "Drag & drop", "Template preview"]
+        action: "Implement Story 3.7 (Control Manual de Playbook Activo)"
+        status: "pending"
+        estimated_time: "5 hours"
+        deliverables: ["Pause/Resume/Complete UI in invoice", "Communications timeline"]
 
       - step: 7
-        action: "Continue sequence: 3.3 → 3.5 → 3.6 → 3.7"
-        estimated_time: "~21 hours total"
-        deliverables: ["All Epic 3 functionality complete"]
-
-      - step: 8
         action: "Execute Epic 3 retrospective"
+        status: "pending"
         estimated_time: "1 hour"
         deliverables: ["Lessons learned", "Process improvements"]
 
@@ -783,36 +796,33 @@ epic_3_detailed_plan:
     approved: true
     approved_by: "Scrum Master (Bob) - Party Mode Session"
     approved_date: "2025-12-03"
+    implementation_readiness_review: "2025-12-04 - APPROVED"
 
     approval_notes: |
-      Epic 3 is READY for Phase 4 (Development).
+      Epic 3 is IN PROGRESS - Development Phase 4.
 
-      Party Mode Session completed with:
-      - PM (John): Validated PRD alignment
-      - Architect (Winston): Resolved C1, C3, designed IMessageService
-      - SM (Bob): Documented State Machine (C2)
-      - TEA (Murat): Designed R-001 mitigation with Upstash
+      COMPLETED (2025-12-03):
+      - Story 3.1: Schema de Playbooks y Mensajes ✅
+      - Story 3.2: Builder de Playbooks ✅
+      - Story 3.3: Playbooks Pre-configurados ✅
 
-      All prerequisites met:
-      - 7 stories validated and enhanced
-      - Gaps C1, C2, C3 resolved and documented in epic-3-motor-cobranzas.md
-      - Risk R-001 mitigated with Upstash design
-      - Dependencies mapped and sequenced
+      PAUSED (2025-12-04):
+      - Documentación PRD, Architecture, Epics revisada
+      - Implementation Readiness Report generado y aprobado
+      - Sprint Planning actualizado
 
-      BEFORE starting development:
+      NEXT SESSION:
+      - Story 3.4: Schema de Collections (drafted, ready)
+      - Then: 3.5 → 3.6 (requires Upstash) → 3.7 → Retro
+
+      PREREQUISITES for Story 3.6:
       1. Setup Upstash Redis account
-      2. Configure env vars in Vercel
-      3. Install @dnd-kit and @upstash/redis packages
-
-      Dev agent can start with Story 3.1 after prerequisites are complete.
-
-      Execution sequence: 3.1 + 3.4 (parallel) → 3.2 → 3.3 → 3.5 → 3.6 → 3.7
+      2. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env vars in Vercel
 
     next_steps:
-      - "Setup: Create Upstash Redis account and configure env vars"
-      - "Setup: Install @dnd-kit/core, @dnd-kit/sortable, @upstash/redis"
-      - "Dev agent: Execute Story 3.1 (Playbook Schema)"
-      - "Follow strict sequencing to avoid blocking issues"
-      - "Mark stories as DONE in sprint-status.yaml as completed"
-      - "Run code review after each story"
-      - "Execute retrospective when Epic 3 is complete"
+      - "Validate and implement Story 3.4 (Schema de Collections)"
+      - "Create Story 3.5 (Activar Playbook en Factura)"
+      - "Setup Upstash Redis before Story 3.6"
+      - "Implement Story 3.6 (Worker) with MockMessageService"
+      - "Implement Story 3.7 (Control Manual in Invoice view)"
+      - "Execute Epic 3 retrospective when complete"
