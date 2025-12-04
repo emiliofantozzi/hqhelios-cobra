@@ -138,7 +138,12 @@ export async function getPlaybookById(playbookId: string, tenantId: string) {
     );
   }
 
-  return data;
+  // Transformar playbook_messages → messages para coincidir con interfaz del frontend
+  return {
+    ...data,
+    messages: data.playbook_messages || [],
+    playbook_messages: undefined,
+  };
 }
 
 /**
