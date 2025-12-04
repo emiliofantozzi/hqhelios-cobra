@@ -38,10 +38,11 @@ export class ConflictError extends Error {
 export async function createCompany(data: CompanyFormData, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar duplicado de taxId (RLS filtra automáticamente por tenant)
+  // Verificar duplicado de taxId dentro del tenant
   const { data: existing } = await supabase
     .from('companies')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('tax_id', data.taxId)
     .maybeSingle();
 
@@ -105,6 +106,7 @@ export async function getCompanies(tenantId: string, includeInactive: boolean = 
   let query = supabase
     .from('companies')
     .select('*')
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (!includeInactive) {
@@ -139,6 +141,7 @@ export async function getCompanyById(companyId: string, tenantId: string) {
   const { data, error } = await supabase
     .from('companies')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('id', companyId)
     .single();
 
@@ -166,10 +169,11 @@ export async function updateCompany(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que existe
+  // Verificar que existe en el tenant
   const { data: existing } = await supabase
     .from('companies')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('id', companyId)
     .single();
 
@@ -177,11 +181,12 @@ export async function updateCompany(
     throw new NotFoundError('Company', companyId);
   }
 
-  // Si taxId cambió, verificar unicidad
+  // Si taxId cambió, verificar unicidad dentro del tenant
   if (data.taxId) {
     const { data: duplicate } = await supabase
       .from('companies')
       .select('id')
+      .eq('tenant_id', tenantId)
       .eq('tax_id', data.taxId)
       .neq('id', companyId)
       .maybeSingle();
@@ -204,6 +209,7 @@ export async function updateCompany(
       risk_level: data.riskLevel,
       updated_at: new Date().toISOString(),
     })
+    .eq('tenant_id', tenantId)
     .eq('id', companyId)
     .select()
     .single();
@@ -231,6 +237,7 @@ export async function deactivateCompany(companyId: string, tenantId: string) {
   const { data: company, error } = await supabase
     .from('companies')
     .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('tenant_id', tenantId)
     .eq('id', companyId)
     .select()
     .single();

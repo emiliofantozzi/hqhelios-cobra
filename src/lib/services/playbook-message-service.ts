@@ -35,10 +35,11 @@ export class NotFoundError extends Error {
 export async function getPlaybookMessages(playbookId: string, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Primero verificar que el playbook existe (RLS se encarga del tenant)
+  // Verificar que el playbook existe y pertenece al tenant
   const { data: playbook } = await supabase
     .from('playbooks')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 
@@ -71,17 +72,21 @@ export async function getPlaybookMessages(playbookId: string, tenantId: string) 
 export async function getPlaybookMessageById(messageId: string, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
+  // Join con playbooks para validar tenant
   const { data, error } = await supabase
     .from('playbook_messages')
-    .select('*')
+    .select('*, playbooks!inner(tenant_id)')
     .eq('id', messageId)
+    .eq('playbooks.tenant_id', tenantId)
     .single();
 
   if (error || !data) {
     throw new NotFoundError('PlaybookMessage', messageId);
   }
 
-  return data;
+  // Remover el objeto playbooks del resultado
+  const { playbooks, ...message } = data;
+  return message;
 }
 
 /**
@@ -113,10 +118,11 @@ export async function createPlaybookMessage(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que el playbook existe
+  // Verificar que el playbook existe y pertenece al tenant
   const { data: playbook } = await supabase
     .from('playbooks')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 
@@ -177,11 +183,12 @@ export async function updatePlaybookMessage(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que existe
+  // Verificar que existe y pertenece al tenant (via playbook)
   const { data: existing } = await supabase
     .from('playbook_messages')
-    .select('id')
+    .select('id, playbooks!inner(tenant_id)')
     .eq('id', messageId)
+    .eq('playbooks.tenant_id', tenantId)
     .single();
 
   if (!existing) {
@@ -232,11 +239,12 @@ export async function updatePlaybookMessage(
 export async function deletePlaybookMessage(messageId: string, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Obtener el mensaje para saber su playbook_id y sequence_order
+  // Obtener el mensaje y validar tenant via playbook
   const { data: message } = await supabase
     .from('playbook_messages')
-    .select('id, playbook_id, sequence_order')
+    .select('id, playbook_id, sequence_order, playbooks!inner(tenant_id)')
     .eq('id', messageId)
+    .eq('playbooks.tenant_id', tenantId)
     .single();
 
   if (!message) {
@@ -297,10 +305,11 @@ export async function reorderPlaybookMessages(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que el playbook existe
+  // Verificar que el playbook existe y pertenece al tenant
   const { data: playbook } = await supabase
     .from('playbooks')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 

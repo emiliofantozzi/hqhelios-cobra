@@ -81,6 +81,7 @@ export async function getPlaybooks(
       playbook_messages(count)
     `
     )
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (!includeInactive) {
@@ -121,6 +122,7 @@ export async function getPlaybookById(playbookId: string, tenantId: string) {
       playbook_messages(*)
     `
     )
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 
@@ -165,11 +167,12 @@ export async function createPlaybook(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Si isDefault=true, verificar que no exista otro default para el mismo trigger_type
+  // Si isDefault=true, verificar que no exista otro default para el mismo trigger_type en el tenant
   if (data.isDefault) {
     const { data: existingDefault } = await supabase
       .from('playbooks')
       .select('id, name')
+      .eq('tenant_id', tenantId)
       .eq('trigger_type', data.triggerType)
       .eq('is_default', true)
       .maybeSingle();
@@ -223,7 +226,7 @@ export async function updatePlaybook(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que existe y obtener estado actual
+  // Verificar que existe en el tenant y obtener estado actual
   const { data: existing, error: fetchError } = await supabase
     .from('playbooks')
     .select(
@@ -232,6 +235,7 @@ export async function updatePlaybook(
       playbook_messages(count)
     `
     )
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 
@@ -246,12 +250,13 @@ export async function updatePlaybook(
     throw new ValidationError('No se puede activar un playbook sin mensajes. Agrega al menos un mensaje primero.');
   }
 
-  // Si cambia isDefault a true, verificar unicidad
+  // Si cambia isDefault a true, verificar unicidad en el tenant
   if (data.isDefault === true && !existing.is_default) {
     const triggerType = data.triggerType || existing.trigger_type;
     const { data: existingDefault } = await supabase
       .from('playbooks')
       .select('id, name')
+      .eq('tenant_id', tenantId)
       .eq('trigger_type', triggerType)
       .eq('is_default', true)
       .neq('id', playbookId)
@@ -279,6 +284,7 @@ export async function updatePlaybook(
   const { data: playbook, error } = await supabase
     .from('playbooks')
     .update(updateData)
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .select()
     .single();
@@ -306,6 +312,7 @@ export async function deactivatePlaybook(playbookId: string, tenantId: string) {
   const { data: playbook, error } = await supabase
     .from('playbooks')
     .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .select()
     .single();
@@ -329,10 +336,11 @@ export async function deactivatePlaybook(playbookId: string, tenantId: string) {
 export async function deletePlaybook(playbookId: string, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Verificar que existe
+  // Verificar que existe en el tenant
   const { data: existing } = await supabase
     .from('playbooks')
     .select('id, name')
+    .eq('tenant_id', tenantId)
     .eq('id', playbookId)
     .single();
 
@@ -340,7 +348,7 @@ export async function deletePlaybook(playbookId: string, tenantId: string) {
     throw new NotFoundError('Playbook', playbookId);
   }
 
-  const { error } = await supabase.from('playbooks').delete().eq('id', playbookId);
+  const { error } = await supabase.from('playbooks').delete().eq('tenant_id', tenantId).eq('id', playbookId);
 
   if (error) {
     console.error('Error deleting playbook:', error);

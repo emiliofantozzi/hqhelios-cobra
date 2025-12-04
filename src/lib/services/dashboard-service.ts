@@ -64,6 +64,7 @@ export async function getDashboardKPIs(
   let query = supabase
     .from('invoices')
     .select('payment_status, amount, due_date, paid_date, company_id')
+    .eq('tenant_id', tenantId)
     .eq('is_active', true);
 
   if (filters.companyIds && filters.companyIds.length > 0) {
@@ -151,6 +152,7 @@ export async function getOverdueBySegment(
   let query = supabase
     .from('invoices')
     .select('due_date, company_id')
+    .eq('tenant_id', tenantId)
     .eq('payment_status', 'pendiente')
     .eq('is_active', true);
 
@@ -225,6 +227,7 @@ export async function getCriticalInvoices(
       companies:company_id(id, name)
     `
     )
+    .eq('tenant_id', tenantId)
     .eq('payment_status', 'pendiente')
     .eq('is_active', true)
     .lt('due_date', todayStr)

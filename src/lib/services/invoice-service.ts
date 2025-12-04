@@ -60,6 +60,7 @@ export async function createInvoice(
   const { data: company, error: companyError } = await supabase
     .from('companies')
     .select('id, name, is_active')
+    .eq('tenant_id', tenantId)
     .eq('id', data.companyId)
     .single();
 
@@ -87,6 +88,7 @@ export async function createInvoice(
   const { data: existingInvoice } = await supabase
     .from('invoices')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('invoice_number', data.invoiceNumber)
     .maybeSingle();
 
@@ -172,6 +174,7 @@ export async function getActiveCompaniesForSelect(tenantId: string) {
   const { data: companies, error } = await supabase
     .from('companies')
     .select('id, name')
+    .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .order('name', { ascending: true });
 
@@ -202,6 +205,7 @@ export async function getInvoiceById(invoiceId: string, tenantId: string) {
       companies:company_id(id, name, tax_id)
     `
     )
+    .eq('tenant_id', tenantId)
     .eq('id', invoiceId)
     .single();
 
@@ -233,6 +237,7 @@ export async function getInvoices(
       companies:company_id(id, name)
     `
     )
+    .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
   if (!includeInactive) {
@@ -291,10 +296,11 @@ export async function updateInvoiceStatus(
 ): Promise<UpdateStatusResult> {
   const supabase = await getSupabaseClient(tenantId);
 
-  // 1. Obtener factura actual
+  // 1. Obtener factura actual del tenant
   const { data: invoice, error: fetchError } = await supabase
     .from('invoices')
     .select('id, payment_status, issue_date')
+    .eq('tenant_id', tenantId)
     .eq('id', invoiceId)
     .single();
 
@@ -345,10 +351,11 @@ export async function updateInvoiceStatus(
     metadata.confirmed_payment_date = transition.confirmedPaymentDate.toISOString().split('T')[0];
   }
 
-  // 4. Actualizar factura
+  // 4. Actualizar factura (con filtro de tenant)
   const { error: updateError } = await supabase
     .from('invoices')
     .update(updateData)
+    .eq('tenant_id', tenantId)
     .eq('id', invoiceId);
 
   if (updateError) {
@@ -410,6 +417,7 @@ export async function getInvoiceStatusHistory(invoiceId: string, tenantId: strin
       metadata
     `
     )
+    .eq('tenant_id', tenantId)
     .eq('invoice_id', invoiceId)
     .order('changed_at', { ascending: false });
 
@@ -502,10 +510,11 @@ export async function validateBusinessRules(
   // 1. Obtener todos los tax_ids únicos del CSV
   const taxIds = Array.from(new Set(rows.map((r) => r.company_tax_id)));
 
-  // 2. Lookup de companies en batch
+  // 2. Lookup de companies en batch (solo del tenant)
   const { data: companies, error: companiesError } = await supabase
     .from('companies')
     .select('id, tax_id')
+    .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .in('tax_id', taxIds);
 
@@ -515,12 +524,13 @@ export async function validateBusinessRules(
 
   const taxIdToCompanyId = new Map(companies?.map((c) => [c.tax_id, c.id]) || []);
 
-  // 3. Obtener todos los invoice_numbers ya existentes
+  // 3. Obtener todos los invoice_numbers ya existentes en el tenant
   const invoiceNumbers = rows.map((r) => r.invoice_number);
 
   const { data: existingInvoices, error: invoicesError } = await supabase
     .from('invoices')
     .select('invoice_number')
+    .eq('tenant_id', tenantId)
     .in('invoice_number', invoiceNumbers);
 
   if (invoicesError) {
@@ -587,11 +597,12 @@ export async function bulkImportInvoices(
     };
   }
 
-  // 2. Obtener mapping tax_id → company_id
+  // 2. Obtener mapping tax_id → company_id (solo del tenant)
   const taxIds = Array.from(new Set(rows.map((r) => r.company_tax_id)));
   const { data: companies } = await supabase
     .from('companies')
     .select('id, tax_id')
+    .eq('tenant_id', tenantId)
     .eq('is_active', true)
     .in('tax_id', taxIds);
 

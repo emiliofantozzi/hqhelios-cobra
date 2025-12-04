@@ -41,6 +41,7 @@ export async function createContact(data: ContactFormData, tenantId: string) {
   const { data: company } = await supabase
     .from('companies')
     .select('id')
+    .eq('tenant_id', tenantId)
     .eq('id', data.companyId)
     .single();
 
@@ -109,6 +110,7 @@ export async function getContactsByCompany(
   let query = supabase
     .from('contacts')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('company_id', companyId);
 
   // Solo filtrar por is_active = true si no queremos incluir inactivos
@@ -143,6 +145,7 @@ export async function getContactById(contactId: string, tenantId: string) {
   const { data, error } = await supabase
     .from('contacts')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('id', contactId)
     .single();
 
@@ -170,10 +173,11 @@ export async function updateContact(
 ) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Obtener contacto actual
+  // Obtener contacto actual del tenant
   const { data: current } = await supabase
     .from('contacts')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('id', contactId)
     .single();
 
@@ -206,6 +210,7 @@ export async function updateContact(
   const { data: updated, error } = await supabase
     .from('contacts')
     .update(updateData)
+    .eq('tenant_id', tenantId)
     .eq('id', contactId)
     .select()
     .single();
@@ -231,10 +236,11 @@ export async function updateContact(
         p_new_escalation_id: contactId,
       });
     } else {
-      // Desmarcar escalation
+      // Desmarcar escalation (con filtro de tenant)
       await supabase
         .from('contacts')
         .update({ is_escalation_contact: false })
+        .eq('tenant_id', tenantId)
         .eq('id', contactId);
     }
   }
@@ -255,10 +261,11 @@ export async function updateContact(
 export async function deactivateContact(contactId: string, tenantId: string) {
   const supabase = await getSupabaseClient(tenantId);
 
-  // Obtener contacto
+  // Obtener contacto del tenant
   const { data: contact } = await supabase
     .from('contacts')
     .select('*')
+    .eq('tenant_id', tenantId)
     .eq('id', contactId)
     .single();
 
@@ -280,6 +287,7 @@ export async function deactivateContact(contactId: string, tenantId: string) {
   const { data: deactivated, error } = await supabase
     .from('contacts')
     .update({ is_active: false, updated_at: new Date().toISOString() })
+    .eq('tenant_id', tenantId)
     .eq('id', contactId)
     .select()
     .single();
