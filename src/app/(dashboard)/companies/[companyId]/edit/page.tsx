@@ -15,12 +15,11 @@ interface Company {
   id: string;
   name: string;
   tax_id: string;
-  email: string | null;
   phone: string | null;
   address: string | null;
   industry: string | null;
-  payment_terms_days: number;
   risk_level: 'bajo' | 'medio' | 'alto';
+  has_portal: boolean;
 }
 
 /**
@@ -86,12 +85,11 @@ export default function EditCompanyPage() {
   const initialData: Partial<CompanyFormData> = {
     name: company.name,
     taxId: company.tax_id,
-    email: company.email || '',
     phone: company.phone || '',
     address: company.address || '',
     industry: company.industry || '',
-    paymentTermsDays: company.payment_terms_days,
     riskLevel: company.risk_level,
+    hasPortal: company.has_portal ?? false,
   };
 
   return (

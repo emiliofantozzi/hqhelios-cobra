@@ -48,22 +48,21 @@ model User {
 }
 
 model Company {
-  id               String    @id @default(uuid()) @db.Uuid
-  tenantId         String    @map("tenant_id") @db.Uuid
-  name             String    @db.VarChar(255)
-  taxId            String    @map("tax_id") @db.VarChar(50)
-  email            String?   @db.VarChar(255)
-  phone            String?   @db.VarChar(50)
-  address          String?
-  industry         String?   @db.VarChar(100)
-  paymentTermsDays Int       @default(30) @map("payment_terms_days")
-  riskLevel        String    @default("medio") @map("risk_level") @db.VarChar(20)
-  isActive         Boolean   @default(true) @map("is_active")
-  createdAt        DateTime  @default(now()) @map("created_at")
-  updatedAt        DateTime  @default(now()) @updatedAt @map("updated_at")
-  tenant           Tenant    @relation(fields: [tenantId], references: [id])
-  contacts         Contact[]
-  invoices         Invoice[]
+  id        String    @id @default(uuid()) @db.Uuid
+  tenantId  String    @map("tenant_id") @db.Uuid
+  name      String    @db.VarChar(255)
+  taxId     String    @map("tax_id") @db.VarChar(50)
+  phone     String?   @db.VarChar(50)
+  address   String?
+  industry  String?   @db.VarChar(100)
+  riskLevel String    @default("medio") @map("risk_level") @db.VarChar(20)
+  hasPortal Boolean   @default(false) @map("has_portal")
+  isActive  Boolean   @default(true) @map("is_active")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @default(now()) @updatedAt @map("updated_at")
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  contacts  Contact[]
+  invoices  Invoice[]
 
   @@unique([tenantId, taxId])
   @@index([tenantId])
@@ -92,25 +91,27 @@ model Contact {
 }
 
 model Invoice {
-  id                   String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tenantId             String    @map("tenant_id") @db.Uuid
-  companyId            String    @map("company_id") @db.Uuid
-  invoiceNumber        String    @map("invoice_number") @db.VarChar(100)
-  amount               Decimal   @db.Decimal(15, 2)
-  currency             String    @default("USD") @db.VarChar(3)
-  issueDate            DateTime  @map("issue_date") @db.Date
-  dueDate              DateTime  @map("due_date") @db.Date
-  confirmedPaymentDate DateTime? @map("confirmed_payment_date") @db.Date
-  paidDate             DateTime? @map("paid_date") @db.Date
-  paymentStatus        String    @default("pendiente") @map("payment_status") @db.VarChar(50)
-  paymentReference     String?   @map("payment_reference") @db.VarChar(255)
-  description          String?
-  notes                String?
-  isActive             Boolean   @default(true) @map("is_active")
-  createdAt            DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt            DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
-  company              Company   @relation(fields: [companyId], references: [id])
-  tenant               Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tenantId              String    @map("tenant_id") @db.Uuid
+  companyId             String    @map("company_id") @db.Uuid
+  invoiceNumber         String    @map("invoice_number") @db.VarChar(100)
+  amount                Decimal   @db.Decimal(15, 2)
+  currency              String    @default("USD") @db.VarChar(3)
+  issueDate             DateTime  @map("issue_date") @db.Date
+  dueDate               DateTime  @map("due_date") @db.Date
+  paymentTermsDays      Int       @default(30) @map("payment_terms_days")
+  projectedPaymentDate  DateTime? @map("projected_payment_date") @db.Date
+  confirmedPaymentDate  DateTime? @map("confirmed_payment_date") @db.Date
+  paidDate              DateTime? @map("paid_date") @db.Date
+  paymentStatus         String    @default("pendiente") @map("payment_status") @db.VarChar(50)
+  paymentReference      String?   @map("payment_reference") @db.VarChar(255)
+  description           String?
+  notes                 String?
+  isActive              Boolean   @default(true) @map("is_active")
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt             DateTime  @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  company               Company   @relation(fields: [companyId], references: [id])
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, invoiceNumber], name: "invoices_tenant_id_invoice_number_key")
   @@index([tenantId, paymentStatus])

@@ -113,9 +113,16 @@ export async function createInvoice(
       currency: data.currency,
       issue_date: data.issueDate.toISOString().split('T')[0], // YYYY-MM-DD
       due_date: data.dueDate.toISOString().split('T')[0],
+      payment_terms_days: data.paymentTermsDays ?? 30,
+      payment_status: data.paymentStatus ?? 'pendiente',
+      projected_payment_date: data.projectedPaymentDate
+        ? data.projectedPaymentDate.toISOString().split('T')[0]
+        : null,
+      confirmed_payment_date: data.confirmedPaymentDate
+        ? data.confirmedPaymentDate.toISOString().split('T')[0]
+        : null,
       description: data.description || null,
       notes: data.notes || null,
-      payment_status: 'pendiente',
       is_active: true,
     })
     .select(

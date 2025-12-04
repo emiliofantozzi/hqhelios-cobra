@@ -13,6 +13,7 @@ import { companySchema, type CompanyFormData } from '@/lib/validations/company-s
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -54,12 +55,11 @@ export function CompanyForm({ mode = 'create', companyId, initialData }: Company
     defaultValues: {
       name: initialData?.name || '',
       taxId: initialData?.taxId || '',
-      email: initialData?.email || '',
       phone: initialData?.phone || '',
       address: initialData?.address || '',
       industry: initialData?.industry || '',
-      paymentTermsDays: initialData?.paymentTermsDays || 30,
       riskLevel: initialData?.riskLevel || 'medio',
+      hasPortal: initialData?.hasPortal ?? false,
     },
   });
 
@@ -69,12 +69,11 @@ export function CompanyForm({ mode = 'create', companyId, initialData }: Company
       form.reset({
         name: initialData.name || '',
         taxId: initialData.taxId || '',
-        email: initialData.email || '',
         phone: initialData.phone || '',
         address: initialData.address || '',
         industry: initialData.industry || '',
-        paymentTermsDays: initialData.paymentTermsDays || 30,
         riskLevel: initialData.riskLevel || 'medio',
+        hasPortal: initialData.hasPortal ?? false,
       });
     }
   }, [initialData, form]);
@@ -167,21 +166,6 @@ export function CompanyForm({ mode = 'create', companyId, initialData }: Company
             )}
           />
 
-          {/* Email (opcional) */}
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="email@empresa.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Teléfono (opcional) */}
           <FormField
             control={form.control}
@@ -212,27 +196,6 @@ export function CompanyForm({ mode = 'create', companyId, initialData }: Company
             )}
           />
 
-          {/* Días de Crédito */}
-          <FormField
-            control={form.control}
-            name="paymentTermsDays"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Días de Crédito</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    min="1"
-                    max="365"
-                    {...field}
-                    onChange={(e) => field.onChange(parseInt(e.target.value) || 30)}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
           {/* Nivel de Riesgo */}
           <FormField
             control={form.control}
@@ -253,6 +216,28 @@ export function CompanyForm({ mode = 'create', companyId, initialData }: Company
                   </SelectContent>
                 </Select>
                 <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* Tiene Portal */}
+          <FormField
+            control={form.control}
+            name="hasPortal"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel>Usa portal de facturas</FormLabel>
+                  <p className="text-sm text-muted-foreground">
+                    Marcar si el cliente tiene acceso a portal de pagos
+                  </p>
+                </div>
               </FormItem>
             )}
           />

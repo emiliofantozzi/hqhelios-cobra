@@ -2,7 +2,7 @@
  * Loading state para el dashboard.
  * Se muestra mientras getCurrentUser() esta cargando.
  *
- * @module app/dashboard/loading
+ * @module app/(dashboard)/dashboard/loading
  */
 export default function DashboardLoading() {
   return (

@@ -4,7 +4,7 @@
  * Error boundary para el dashboard.
  * Captura errores en el Server Component y muestra un mensaje amigable.
  *
- * @module app/dashboard/error
+ * @module app/(dashboard)/dashboard/error
  */
 export default function DashboardError({
   error,

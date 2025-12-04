@@ -83,9 +83,9 @@ And queries del worker ejecutan en <100ms para 1000 collections
 
 - [ ] **Task 1.3**: Actualizar modelos relacionados
   - [ ] Agregar `collections Collection[]` a Tenant
-  - [ ] Agregar `collection Collection?` a Invoice (1:1 activa, pero puede haber historial)
+  - [ ] Agregar `collections Collection[]` a Invoice (permite historial de múltiples collections)
   - [ ] Agregar `collections Collection[]` a Company
-  - [ ] Agregar `collections Collection[]` a Contact
+  - [ ] Agregar `collections Collection[]` a Contact (relation para primaryContact)
   - [ ] Agregar `collections Collection[]` a Playbook
 
 ### Task 2: Ejecutar migración Prisma (AC: 1)
@@ -115,6 +115,7 @@ And queries del worker ejecutan en <100ms para 1000 collections
 
 ### Task 4: RLS Policies para Collections (AC: 1)
 - [ ] **Task 4.1**: Crear migration SQL manual para RLS
+  - [ ] Seguir patrón de `scripts/rls/03-playbooks-rls.sql`
   - [ ] ENABLE ROW LEVEL SECURITY en tabla collections
   - [ ] FORCE ROW LEVEL SECURITY en tabla collections
   - [ ] Crear policy SELECT con tenant_id check
@@ -349,7 +350,9 @@ prisma/
     └── XXXXXX_add_collection_schema/
         └── migration.sql  # Generado por Prisma
 
-# SQL manual (ejecutar después de migrate)
+# SQL manual - EJECUTAR EN ORDEN después de prisma migrate:
+# 1. Primero: prisma migrate dev
+# 2. Después: ejecutar 04-collections-rls.sql en Supabase SQL Editor
 scripts/
 └── rls/
     ├── 03-playbooks-rls.sql      # De Story 3.1

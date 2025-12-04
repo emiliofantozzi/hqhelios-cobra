@@ -2,7 +2,7 @@
  * Dashboard Page - Página principal con KPIs y métricas
  * Story 2.8: Dashboard Básico con KPIs
  *
- * @module app/dashboard/page
+ * @module app/(dashboard)/dashboard/page
  */
 import { redirect } from 'next/navigation';
 import {

@@ -9,6 +9,7 @@ import { clerkClient } from '@clerk/nextjs/server';
 import { generateSlug, generateTenantName } from '@/lib/utils/generate-slug';
 import { supabaseEnv, validateEnv } from '@/lib/config/env';
 import { getTenantConfig } from '@/lib/config/tenant-defaults';
+import { createDefaultPlaybooks } from '@/lib/seed/create-default-playbooks';
 
 interface ProvisionUserInput {
   id: string;
@@ -121,6 +122,15 @@ export async function provisionTenantForUser(
 
     createdUserId = user.id;
     console.log(`User created for tenant: ${tenant.id}`);
+
+    // 4.5. Crear playbooks por defecto para el nuevo tenant
+    try {
+      await createDefaultPlaybooks(tenant.id, user.id);
+      console.log(`Default playbooks created for tenant: ${tenant.id}`);
+    } catch (seedError) {
+      // No fallar provisioning si seed falla - loggear y continuar
+      console.error('Warning: Failed to create default playbooks:', seedError);
+    }
 
     // 5. Actualizar metadata de Clerk con tenant_id
     try {

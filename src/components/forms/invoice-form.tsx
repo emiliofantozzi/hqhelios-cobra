@@ -44,6 +44,7 @@ import {
   createInvoiceSchema,
   type CreateInvoiceInput,
   SUPPORTED_CURRENCIES,
+  PAYMENT_STATUSES,
 } from '@/lib/validations/invoice-schema';
 
 interface InvoiceFormProps {
@@ -88,6 +89,10 @@ export function InvoiceForm({
       currency: 'USD',
       issueDate: today,
       dueDate: thirtyDaysLater,
+      paymentTermsDays: 30,
+      paymentStatus: 'pendiente',
+      projectedPaymentDate: undefined,
+      confirmedPaymentDate: undefined,
       description: '',
       notes: '',
     },
@@ -108,6 +113,8 @@ export function InvoiceForm({
           ...data,
           issueDate: data.issueDate.toISOString(),
           dueDate: data.dueDate.toISOString(),
+          projectedPaymentDate: data.projectedPaymentDate?.toISOString() ?? null,
+          confirmedPaymentDate: data.confirmedPaymentDate?.toISOString() ?? null,
         }),
       });
 
@@ -341,6 +348,147 @@ export function InvoiceForm({
                 <FormDescription>
                   Fecha limite de pago (debe ser mayor o igual a fecha de emision)
                 </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Payment Terms & Status (lado a lado) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="paymentTermsDays"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Condicion de Pago (dias)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="1"
+                    max="365"
+                    placeholder="30"
+                    {...field}
+                    onChange={(e) => {
+                      const value = parseInt(e.target.value);
+                      field.onChange(isNaN(value) ? 30 : value);
+                    }}
+                    value={field.value ?? 30}
+                  />
+                </FormControl>
+                <FormDescription>Dias de credito (1-365)</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="paymentStatus"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Estado de Pago</FormLabel>
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione estado" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {PAYMENT_STATUSES.map((status) => (
+                      <SelectItem key={status} value={status}>
+                        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormDescription>Estado inicial de la factura</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        {/* Projected & Confirmed Payment Dates (lado a lado) */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField
+            control={form.control}
+            name="projectedPaymentDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha Proyectada de Pago</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full pl-3 text-left font-normal',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, 'PPP', { locale: es })
+                        ) : (
+                          <span>Sin fecha proyectada</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ?? undefined}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>Fecha estimada de pago (opcional)</FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="confirmedPaymentDate"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Fecha Confirmada de Pago</FormLabel>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <FormControl>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          'w-full pl-3 text-left font-normal',
+                          !field.value && 'text-muted-foreground'
+                        )}
+                      >
+                        {field.value ? (
+                          format(field.value, 'PPP', { locale: es })
+                        ) : (
+                          <span>Sin fecha confirmada</span>
+                        )}
+                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                      </Button>
+                    </FormControl>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={field.value ?? undefined}
+                      onSelect={field.onChange}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+                <FormDescription>Fecha comprometida por el cliente (opcional)</FormDescription>
                 <FormMessage />
               </FormItem>
             )}

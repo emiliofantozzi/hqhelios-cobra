@@ -153,6 +153,9 @@ export default function InvoicesPage() {
                     Vencimiento
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Situacion
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
                 </tr>
@@ -188,6 +191,21 @@ export default function InvoicesPage() {
                           locale: es,
                         })}
                       </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {invoice.payment_status === 'pendiente' ? (
+                        new Date(invoice.due_date) < new Date() ? (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                            Vencida
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                            A tiempo
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-sm text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <InvoiceStatusBadge status={invoice.payment_status as InvoiceStatus} />

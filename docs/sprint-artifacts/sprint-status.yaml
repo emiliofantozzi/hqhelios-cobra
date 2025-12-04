@@ -69,7 +69,7 @@ development_status:
   epic-3: contexted
   3-1-schema-de-playbooks-y-mensajes: done
   3-2-builder-de-playbooks: done
-  3-3-playbooks-pre-configurados-seed: backlog
+  3-3-playbooks-pre-configurados-seed: done
   3-4-schema-de-collections: ready-for-dev
   3-5-crear-cobranza-desde-factura: backlog
   3-6-worker-de-procesamiento-automatico: backlog
@@ -406,6 +406,104 @@ epic_2_detailed_plan:
       - "Execute retrospective when Epic 2 is complete"
 
 # ============================================================
+# SCHEMA REFINEMENT SPRINT (Between Epic 2 & Epic 3.4)
+# ============================================================
+# Generated: 2025-12-04
+# Status: COMPLETED
+# Purpose: Schema adjustments based on real-world usage feedback
+
+schema_refinement_sprint:
+  date: "2025-12-04"
+  status: "completed"
+  trigger: "User discovered field adjustments needed during real-world testing"
+
+  changes_made:
+    invoices:
+      added_fields:
+        - field: "payment_terms_days"
+          type: "INTEGER DEFAULT 30"
+          notes: "Moved from companies table - payment terms per invoice"
+        - field: "projected_payment_date"
+          type: "DATE NULL"
+          notes: "Optional estimated payment date"
+      ui_changes:
+        - "Added paymentTermsDays input to invoice form"
+        - "Added projectedPaymentDate date picker"
+        - "Added paymentStatus selector at creation time"
+        - "Added confirmedPaymentDate to creation form"
+        - "Added 'Situación' column (Vencida/A tiempo) to invoice list"
+
+    companies:
+      added_fields:
+        - field: "has_portal"
+          type: "BOOLEAN DEFAULT false"
+          notes: "Whether company uses payment portal"
+      removed_fields:
+        - field: "email"
+          reason: "Email belongs to contacts, not companies"
+        - field: "payment_terms_days"
+          reason: "Moved to invoices table for per-invoice flexibility"
+      ui_changes:
+        - "Removed email field from company form"
+        - "Removed paymentTermsDays field from company form"
+        - "Added hasPortal toggle checkbox"
+        - "Fixed invoice_count bug (was hardcoded to 0)"
+
+    contacts:
+      investigation:
+        - issue: "Badges for Primary/Escalation contacts never appear"
+        - finding: "Code exists correctly, likely data issue (values stored as false)"
+        - status: "Requires production data verification"
+
+  stories_completed:
+    - id: "Story 0"
+      title: "Investigar Bug Badges Contactos"
+      status: "done (code OK, needs data verification)"
+
+    - id: "Story A"
+      title: "Migración de Schema"
+      status: "done"
+      files_modified:
+        - "prisma/schema.prisma"
+        - "src/lib/validations/company-schema.ts"
+        - "src/lib/validations/invoice-schema.ts"
+        - "src/lib/services/company-service.ts"
+        - "src/lib/services/invoice-service.ts"
+
+    - id: "Story B"
+      title: "UI de Facturas"
+      status: "done"
+      files_modified:
+        - "src/components/forms/invoice-form.tsx"
+        - "src/app/(dashboard)/invoices/page.tsx"
+
+    - id: "Story C"
+      title: "UI de Empresas + Fix Bugs"
+      status: "done"
+      files_modified:
+        - "src/components/forms/company-form.tsx"
+        - "src/app/(dashboard)/companies/[companyId]/edit/page.tsx"
+
+    - id: "Story D"
+      title: "Actualizar Documentación"
+      status: "done"
+      files_modified:
+        - "docs/sprint-artifacts/sprint-status.yaml"
+
+  sql_migration:
+    file: "prisma/migrations/manual-refinamiento-schema.sql"
+    status: "pending - must be run manually in Supabase"
+    commands: |
+      -- Run in Supabase SQL Editor:
+      ALTER TABLE companies ADD COLUMN IF NOT EXISTS has_portal BOOLEAN DEFAULT false;
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_terms_days INTEGER DEFAULT 30;
+      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS projected_payment_date DATE;
+      ALTER TABLE companies DROP COLUMN IF EXISTS email;
+      ALTER TABLE companies DROP COLUMN IF EXISTS payment_terms_days;
+
+  next_step: "Continue with Story 3.4 (Schema de Collections)"
+
+# ============================================================
 # EPIC 3 DETAILED SPRINT PLANNING
 # ============================================================
 # Generated: 2025-12-03
@@ -419,7 +517,7 @@ epic_3_detailed_plan:
   phase: "Phase 4 - Implementation IN PROGRESS"
   status: "in-progress"
   total_stories: 7
-  completed_stories: 1
+  completed_stories: 3
 
   # ============================================================
   # PARTY MODE DECISIONS (2025-12-03)
@@ -513,13 +611,14 @@ epic_3_detailed_plan:
 
     - id: "3.3"
       title: "Playbooks Pre-configurados (Seed)"
-      status: "backlog"
+      status: "done"
       priority: "medium"
       dependencies: ["3.2"]
       blocks: ["3.5"]
       estimated_points: 3
       acceptance_criteria_count: 3
-      notes: "3 default playbooks in Spanish"
+      completed_date: "2025-12-03"
+      notes: "COMPLETED - 3 default playbooks in Spanish, integrated with tenant provisioning"
 
     - id: "3.4"
       title: "Schema de Collections"

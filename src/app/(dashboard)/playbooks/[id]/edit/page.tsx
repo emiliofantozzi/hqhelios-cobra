@@ -5,9 +5,9 @@
  *
  * @module app/(dashboard)/playbooks/[id]/edit
  */
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { PlaybookForm } from '@/components/forms/playbook-form';
 import { PlaybookMessageForm } from '@/components/forms/playbook-message-form';
 import { MessageList } from '@/components/playbooks/message-list';
@@ -43,8 +43,9 @@ function LoadingState() {
 /**
  * Página de edición de playbook con mensajes
  */
-export default function EditPlaybookPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id: playbookId } = use(params);
+export default function EditPlaybookPage() {
+  const params = useParams();
+  const playbookId = params.id as string;
   const router = useRouter();
   const [playbook, setPlaybook] = useState<PlaybookData | null>(null);
   const [isLoading, setIsLoading] = useState(true);

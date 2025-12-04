@@ -29,9 +29,8 @@ export class ConflictError extends Error {
  * const company = await createCompany({
  *   name: 'Acme Corp',
  *   taxId: 'RFC123456',
- *   email: 'contact@acme.com',
- *   paymentTermsDays: 30,
- *   riskLevel: 'medio'
+ *   riskLevel: 'medio',
+ *   hasPortal: false
  * }, tenantId);
  * ```
  */
@@ -57,12 +56,11 @@ export async function createCompany(data: CompanyFormData, tenantId: string) {
       tenant_id: tenantId,
       name: data.name,
       tax_id: data.taxId,
-      email: data.email || null,
       phone: data.phone || null,
       address: data.address || null,
       industry: data.industry || null,
-      payment_terms_days: data.paymentTermsDays,
       risk_level: data.riskLevel,
+      has_portal: data.hasPortal ?? false,
       is_active: true,
     })
     .select()
@@ -103,9 +101,10 @@ export class NotFoundError extends Error {
 export async function getCompanies(tenantId: string, includeInactive: boolean = false) {
   const supabase = await getSupabaseClient(tenantId);
 
+  // Query empresas con conteo de facturas usando relación
   let query = supabase
     .from('companies')
-    .select('*')
+    .select('*, invoices(count)')
     .eq('tenant_id', tenantId)
     .order('created_at', { ascending: false });
 
@@ -120,11 +119,14 @@ export async function getCompanies(tenantId: string, includeInactive: boolean = 
     throw new Error(`Failed to fetch companies: ${error.message}`);
   }
 
-  // Agregar invoice_count = 0 por ahora (se actualizará cuando existan invoices)
-  return (data || []).map((company) => ({
-    ...company,
-    invoice_count: 0,
-  }));
+  // Transformar respuesta para incluir invoice_count
+  return (data || []).map((company) => {
+    const { invoices, ...rest } = company;
+    return {
+      ...rest,
+      invoice_count: invoices?.[0]?.count ?? 0,
+    };
+  });
 }
 
 /**
@@ -201,12 +203,11 @@ export async function updateCompany(
     .update({
       name: data.name,
       tax_id: data.taxId,
-      email: data.email || null,
       phone: data.phone || null,
       address: data.address || null,
       industry: data.industry || null,
-      payment_terms_days: data.paymentTermsDays,
       risk_level: data.riskLevel,
+      has_portal: data.hasPortal,
       updated_at: new Date().toISOString(),
     })
     .eq('tenant_id', tenantId)

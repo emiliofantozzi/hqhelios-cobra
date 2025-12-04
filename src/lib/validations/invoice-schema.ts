@@ -65,6 +65,19 @@ const invoiceBaseSchema = z.object({
     invalid_type_error: 'Fecha de vencimiento inválida',
   }),
 
+  // Nuevos campos agregados en refinamiento de schema
+  paymentTermsDays: z
+    .number()
+    .int('Debe ser un número entero')
+    .min(1, 'Mínimo 1 día')
+    .max(365, 'Máximo 365 días'),
+
+  paymentStatus: z.enum(PAYMENT_STATUSES),
+
+  projectedPaymentDate: z.coerce.date().optional().nullable(),
+
+  confirmedPaymentDate: z.coerce.date().optional().nullable(),
+
   description: z
     .string()
     .max(500, 'La descripción no puede exceder 500 caracteres')
