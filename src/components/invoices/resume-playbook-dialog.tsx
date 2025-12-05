@@ -47,8 +47,14 @@ export function ResumePlaybookDialog({
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Error al reanudar playbook');
+        let errorMessage = 'Error al reanudar playbook';
+        try {
+          const error = await res.json();
+          errorMessage = error.message || errorMessage;
+        } catch {
+          errorMessage = `Error HTTP ${res.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       toast({

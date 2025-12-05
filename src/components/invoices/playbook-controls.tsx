@@ -19,7 +19,6 @@ import { ResumePlaybookDialog } from './resume-playbook-dialog';
 import { CompletePlaybookDialog } from './complete-playbook-dialog';
 
 interface PlaybookControlsProps {
-  collectionId: string;
   currentStatus: 'active' | 'paused' | 'awaiting_response' | 'pending_review';
   playbookName: string;
   invoiceId: string;

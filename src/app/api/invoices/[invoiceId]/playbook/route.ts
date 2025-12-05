@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { getTenantId } from '@/lib/auth/get-tenant-id';
-import { playbookActionSchema } from '@/lib/validations/collection-schema';
+import { playbookActionSchema, invoiceIdSchema } from '@/lib/validations/collection-schema';
 import {
   getActiveCollectionForInvoice,
   pauseCollection,
@@ -46,6 +46,15 @@ export async function PATCH(request: NextRequest, context: RouteContext) {
 
     const tenantId = await getTenantId();
     const { invoiceId } = await context.params;
+
+    // Validar invoiceId es UUID válido
+    const invoiceIdResult = invoiceIdSchema.safeParse(invoiceId);
+    if (!invoiceIdResult.success) {
+      return NextResponse.json(
+        { error: 'ID de factura inválido' },
+        { status: 400 }
+      );
+    }
 
     // Parsear y validar body
     const body = await request.json();

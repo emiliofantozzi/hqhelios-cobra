@@ -207,7 +207,6 @@ export default function InvoiceDetailPage() {
         <div className="flex gap-2 flex-wrap">
           {invoice.activeCollection && (
             <PlaybookControls
-              collectionId={invoice.activeCollection.id}
               currentStatus={invoice.activeCollection.status}
               playbookName={invoice.activeCollection.playbook.name}
               invoiceId={invoice.id}

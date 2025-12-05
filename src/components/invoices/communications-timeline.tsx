@@ -63,21 +63,31 @@ export function CommunicationsTimeline({ collectionId }: CommunicationsTimelineP
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchTimeline = async () => {
       try {
-        const res = await fetch(`/api/collections/${collectionId}/timeline`);
+        const res = await fetch(`/api/collections/${collectionId}/timeline`, {
+          signal: controller.signal,
+        });
         if (res.ok) {
           const data = await res.json();
           setEvents(data);
         }
       } catch (error) {
-        console.error('Error fetching timeline:', error);
+        // Ignorar errores de abort (componente desmontado)
+        if (error instanceof Error && error.name === 'AbortError') {
+          return;
+        }
+        console.error(`Error fetching timeline for collection ${collectionId}:`, error);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTimeline();
+
+    return () => controller.abort();
   }, [collectionId]);
 
   if (isLoading) {

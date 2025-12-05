@@ -36,3 +36,8 @@ export const playbookActionSchema = z.object({
  * Tipo inferido del schema de acción
  */
 export type PlaybookActionInput = z.infer<typeof playbookActionSchema>;
+
+/**
+ * Schema para validar invoiceId en route params
+ */
+export const invoiceIdSchema = z.string().uuid('ID de factura inválido');

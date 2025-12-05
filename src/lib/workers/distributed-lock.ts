@@ -70,7 +70,9 @@ export async function acquireLock(
   // EX = set expiry in seconds
   const result = await redis.set(lockKey, '1', { nx: true, ex: ttlSeconds });
 
-  return result === 'OK';
+  // Upstash SDK retorna 'OK' si tuvo éxito, null si la key ya existe
+  // Algunos SDKs pueden retornar boolean, así que validamos ambos casos
+  return result === 'OK' || (result as unknown) === true;
 }
 
 /**

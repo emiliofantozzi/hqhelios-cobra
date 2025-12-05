@@ -54,8 +54,14 @@ export function CompletePlaybookDialog({
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Error al completar playbook');
+        let errorMessage = 'Error al completar playbook';
+        try {
+          const error = await res.json();
+          errorMessage = error.message || errorMessage;
+        } catch {
+          errorMessage = `Error HTTP ${res.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       toast({

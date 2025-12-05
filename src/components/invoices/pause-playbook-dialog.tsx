@@ -50,8 +50,14 @@ export function PausePlaybookDialog({
       });
 
       if (!res.ok) {
-        const error = await res.json();
-        throw new Error(error.message || 'Error al pausar playbook');
+        let errorMessage = 'Error al pausar playbook';
+        try {
+          const error = await res.json();
+          errorMessage = error.message || errorMessage;
+        } catch {
+          errorMessage = `Error HTTP ${res.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       toast({

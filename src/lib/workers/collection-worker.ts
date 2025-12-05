@@ -304,6 +304,20 @@ async function processCollection(
       ? collection.primary_contact.phone || collection.primary_contact.email
       : collection.primary_contact.email;
 
+  // Validate recipient is not null/empty
+  if (!to) {
+    console.error(
+      `[Worker] Collection ${collection.id} - no valid recipient for ${nextMessage.channel}`,
+      { contactId: collection.primary_contact_id, channel: nextMessage.channel }
+    );
+    await pauseCollectionWithError(
+      supabase,
+      collection.id,
+      new Error(`No valid recipient for ${nextMessage.channel}`)
+    );
+    return 'skipped';
+  }
+
   // Send message
   const sendResult = await messageService.send({
     channel: nextMessage.channel as MessageChannel,
