@@ -17,6 +17,42 @@ const VALID_STATUSES_FOR_ACTIVATION = ['pendiente', 'fecha_confirmada'];
 const NON_TERMINAL_STATUSES = ['active', 'paused', 'awaiting_response', 'pending_review'];
 
 /**
+ * Estados terminales (no permiten más acciones)
+ */
+const TERMINAL_STATUSES = ['completed', 'escalated'];
+
+/**
+ * State machine - transiciones válidas de collection status
+ * Story 3.7: Control Manual de Playbook Activo
+ */
+const VALID_TRANSITIONS: Record<string, string[]> = {
+  active: ['paused', 'awaiting_response', 'completed', 'escalated'],
+  paused: ['active', 'completed'],
+  awaiting_response: ['active', 'pending_review'],
+  pending_review: ['active', 'completed'],
+  escalated: ['completed'],
+};
+
+/**
+ * Valida si una transición de estado es permitida
+ */
+function canTransition(from: string, to: string): boolean {
+  return VALID_TRANSITIONS[from]?.includes(to) ?? false;
+}
+
+/**
+ * Resultado genérico de operaciones del servicio
+ */
+interface ServiceResult<T> {
+  success: boolean;
+  data?: T;
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
  * Resultado de operación de creación de collection
  */
 interface CreateCollectionResult {
@@ -302,4 +338,277 @@ export async function getPlaybooksForActivation(tenantId: string) {
     description: playbook.description,
     message_count: playbook.playbook_messages?.[0]?.count || 0,
   }));
+}
+
+/**
+ * Pausa una collection activa
+ * Story 3.7: Control Manual de Playbook Activo
+ *
+ * @param tenantId - ID del tenant
+ * @param collectionId - ID de la collection
+ * @param userId - ID del usuario que realiza la acción
+ * @param note - Nota opcional
+ * @returns Resultado con collection actualizada o error
+ */
+export async function pauseCollection(
+  tenantId: string,
+  collectionId: string,
+  userId: string,
+  note?: string
+): Promise<ServiceResult<ActiveCollection>> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  // 1. Fetch collection
+  const { data: collection, error } = await supabase
+    .from('collections')
+    .select(`id, status, playbooks:playbook_id(id, name)`)
+    .eq('tenant_id', tenantId)
+    .eq('id', collectionId)
+    .single();
+
+  if (error || !collection) {
+    return {
+      success: false,
+      error: { code: 'COLLECTION_NOT_FOUND', message: 'Collection no encontrada' },
+    };
+  }
+
+  // 2. Validar transición
+  if (!canTransition(collection.status, 'paused')) {
+    return {
+      success: false,
+      error: {
+        code: 'INVALID_TRANSITION',
+        message:
+          collection.status === 'paused'
+            ? 'El playbook ya está pausado'
+            : `No se puede pausar un playbook con estado "${collection.status}"`,
+      },
+    };
+  }
+
+  // 3. Update
+  const { error: updateError } = await supabase
+    .from('collections')
+    .update({ status: 'paused', updated_at: new Date().toISOString() })
+    .eq('id', collectionId)
+    .eq('tenant_id', tenantId);
+
+  if (updateError) {
+    console.error('Error pausing collection:', updateError);
+    return {
+      success: false,
+      error: { code: 'DATABASE_ERROR', message: 'Error al pausar playbook' },
+    };
+  }
+
+  console.log(`Collection ${collectionId} paused by user ${userId}${note ? ` with note: ${note}` : ''}`);
+
+  const playbookData = collection.playbooks as unknown as { id: string; name: string };
+  return {
+    success: true,
+    data: { id: collection.id, status: 'paused', playbook: playbookData },
+  };
+}
+
+/**
+ * Reanuda una collection pausada
+ * Story 3.7: Control Manual de Playbook Activo
+ *
+ * @param tenantId - ID del tenant
+ * @param collectionId - ID de la collection
+ * @param userId - ID del usuario que realiza la acción
+ * @param note - Nota opcional
+ * @returns Resultado con collection actualizada o error
+ */
+export async function resumeCollection(
+  tenantId: string,
+  collectionId: string,
+  userId: string,
+  note?: string
+): Promise<ServiceResult<ActiveCollection>> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  const { data: collection, error } = await supabase
+    .from('collections')
+    .select(`id, status, playbooks:playbook_id(id, name)`)
+    .eq('tenant_id', tenantId)
+    .eq('id', collectionId)
+    .single();
+
+  if (error || !collection) {
+    return {
+      success: false,
+      error: { code: 'COLLECTION_NOT_FOUND', message: 'Collection no encontrada' },
+    };
+  }
+
+  if (!canTransition(collection.status, 'active')) {
+    return {
+      success: false,
+      error: {
+        code: 'INVALID_TRANSITION',
+        message:
+          collection.status === 'active'
+            ? 'El playbook ya está activo'
+            : `No se puede reanudar un playbook con estado "${collection.status}"`,
+      },
+    };
+  }
+
+  // Update con next_action_at = now para procesamiento inmediato
+  const { error: updateError } = await supabase
+    .from('collections')
+    .update({
+      status: 'active',
+      next_action_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', collectionId)
+    .eq('tenant_id', tenantId);
+
+  if (updateError) {
+    console.error('Error resuming collection:', updateError);
+    return {
+      success: false,
+      error: { code: 'DATABASE_ERROR', message: 'Error al reanudar playbook' },
+    };
+  }
+
+  console.log(`Collection ${collectionId} resumed by user ${userId}${note ? ` with note: ${note}` : ''}`);
+
+  const playbookData = collection.playbooks as unknown as { id: string; name: string };
+  return {
+    success: true,
+    data: { id: collection.id, status: 'active', playbook: playbookData },
+  };
+}
+
+/**
+ * Completa manualmente una collection
+ * Story 3.7: Control Manual de Playbook Activo
+ *
+ * @param tenantId - ID del tenant
+ * @param collectionId - ID de la collection
+ * @param userId - ID del usuario que realiza la acción
+ * @param note - Nota opcional
+ * @returns Resultado con collection actualizada o error
+ */
+export async function completeCollection(
+  tenantId: string,
+  collectionId: string,
+  userId: string,
+  note?: string
+): Promise<ServiceResult<ActiveCollection>> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  const { data: collection, error } = await supabase
+    .from('collections')
+    .select(`id, status, playbooks:playbook_id(id, name)`)
+    .eq('tenant_id', tenantId)
+    .eq('id', collectionId)
+    .single();
+
+  if (error || !collection) {
+    return {
+      success: false,
+      error: { code: 'COLLECTION_NOT_FOUND', message: 'Collection no encontrada' },
+    };
+  }
+
+  if (TERMINAL_STATUSES.includes(collection.status)) {
+    return {
+      success: false,
+      error: { code: 'INVALID_TRANSITION', message: 'El playbook ya está completado' },
+    };
+  }
+
+  const { error: updateError } = await supabase
+    .from('collections')
+    .update({
+      status: 'completed',
+      completed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', collectionId)
+    .eq('tenant_id', tenantId);
+
+  if (updateError) {
+    console.error('Error completing collection:', updateError);
+    return {
+      success: false,
+      error: { code: 'DATABASE_ERROR', message: 'Error al completar playbook' },
+    };
+  }
+
+  console.log(`Collection ${collectionId} completed by user ${userId}${note ? ` with note: ${note}` : ''}`);
+
+  const playbookData = collection.playbooks as unknown as { id: string; name: string };
+  return {
+    success: true,
+    data: { id: collection.id, status: 'completed', playbook: playbookData },
+  };
+}
+
+/**
+ * Evento de timeline de comunicaciones
+ */
+export interface TimelineEvent {
+  id: string;
+  type: 'playbook_started' | 'playbook_paused' | 'playbook_resumed' | 'playbook_completed';
+  timestamp: string;
+  note?: string;
+  metadata?: { playbookName?: string };
+}
+
+/**
+ * Obtiene el timeline de eventos de una collection
+ * Story 3.7: Control Manual de Playbook Activo
+ *
+ * Nota: Esta es una implementación básica que muestra eventos de inicio y completado.
+ * Epic 4 agregará mensajes enviados y respuestas recibidas.
+ *
+ * @param tenantId - ID del tenant
+ * @param collectionId - ID de la collection
+ * @returns Array de eventos ordenados por timestamp DESC
+ */
+export async function getCollectionTimeline(
+  tenantId: string,
+  collectionId: string
+): Promise<TimelineEvent[]> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  const { data: collection } = await supabase
+    .from('collections')
+    .select(`id, status, started_at, completed_at, playbooks:playbook_id(name)`)
+    .eq('tenant_id', tenantId)
+    .eq('id', collectionId)
+    .single();
+
+  if (!collection) return [];
+
+  const playbookData = collection.playbooks as unknown as { name: string };
+  const events: TimelineEvent[] = [];
+
+  // Evento de inicio siempre presente
+  if (collection.started_at) {
+    events.push({
+      id: `${collection.id}-started`,
+      type: 'playbook_started',
+      timestamp: collection.started_at,
+      metadata: { playbookName: playbookData.name },
+    });
+  }
+
+  // Evento de completado si aplica
+  if (collection.completed_at) {
+    events.push({
+      id: `${collection.id}-completed`,
+      type: 'playbook_completed',
+      timestamp: collection.completed_at,
+    });
+  }
+
+  // Ordenar DESC (más reciente primero)
+  return events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }

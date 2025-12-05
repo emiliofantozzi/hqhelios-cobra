@@ -73,9 +73,10 @@ development_status:
   3-2-builder-de-playbooks: done
   3-3-playbooks-pre-configurados-seed: done
   3-4-schema-de-collections: done
-  3-5-activar-playbook-en-factura: backlog
-  3-6-worker-de-procesamiento-automatico: backlog
-  3-7-control-manual-de-playbook-activo: backlog
+  3-4-1-ui-consistency: done  # 2025-12-04 - Tabla facturas + edición + vista empresa
+  3-5-activar-playbook-en-factura: done  # 2025-12-04 - Implemented
+  3-6-worker-de-procesamiento-automatico: done  # 2025-12-04 - Code review completed
+  3-7-control-manual-de-playbook-activo: done  # 2025-12-05 - Implemented, pending prod testing
   epic-3-retrospective: optional
 
   # ============================================================
@@ -518,10 +519,10 @@ epic_3_detailed_plan:
   epic_name: "Motor de Cobranzas Automatizado"
   phase: "Phase 4 - Implementation IN PROGRESS"
   status: "in-progress"
-  total_stories: 7
-  completed_stories: 3
-  next_story: "3.4"
-  next_story_status: "ready-for-dev"
+  total_stories: 8  # includes bonus Story 3.4.1
+  completed_stories: 8
+  next_story: null
+  next_story_status: null
 
   # ============================================================
   # PARTY MODE DECISIONS (2025-12-03)
@@ -627,48 +628,51 @@ epic_3_detailed_plan:
 
     - id: "3.4"
       title: "Schema de Collections"
-      status: "ready-for-dev"
+      status: "done"
       priority: "critical"
       dependencies: ["epic-2-complete"]
       blocks: ["3.5", "3.6", "3.7"]
       estimated_points: 3
       acceptance_criteria_count: 4
       validated_date: "2025-12-04"
-      notes: "READY FOR DEV - Validated post-documentation changes. Story file: docs/sprint-artifacts/3-4-schema-de-collections.md"
+      completed_date: "2025-12-04"
+      notes: "COMPLETED 2025-12-04 - Code review passed. Story file: docs/sprint-artifacts/3-4-schema-de-collections.md"
 
     - id: "3.5"
       title: "Activar Playbook en Factura"
-      status: "backlog"
+      status: "ready-for-dev"
       priority: "high"
       dependencies: ["3.3", "3.4"]
       blocks: ["3.6", "3.7"]
       estimated_points: 5
-      acceptance_criteria_count: 5
-      notes: "UI factura-céntrica - usuario activa playbook desde vista de factura"
+      acceptance_criteria_count: 8
+      story_file: "docs/sprint-artifacts/3-5-activar-playbook-en-factura.md"
+      notes: "UI factura-céntrica - Modal para activar playbook desde detalle de factura"
 
     - id: "3.6"
       title: "Worker de Procesamiento Automático"
-      status: "backlog"
+      status: "done"
       priority: "critical"
       dependencies: ["3.5"]
       blocks: ["3.7"]
       estimated_points: 8
       acceptance_criteria_count: 11
-      notes: "CRITICAL: Setup Upstash BEFORE implementing. Uses MockMessageService."
-      prerequisites:
-        - "Upstash account configured"
-        - "UPSTASH_REDIS_REST_URL env var"
-        - "UPSTASH_REDIS_REST_TOKEN env var"
+      completed_date: "2025-12-04"
+      notes: "COMPLETED 2025-12-04 - Upstash Redis lock, rate limiting, MockMessageService, comprehensive tests"
+      story_file: "docs/sprint-artifacts/3-6-worker-de-procesamiento-automatico.md"
+      code_review: "completed"
 
     - id: "3.7"
       title: "Control Manual de Playbook Activo"
-      status: "backlog"
+      status: "done"
       priority: "high"
       dependencies: ["3.5"]
       blocks: []
       estimated_points: 5
       acceptance_criteria_count: 5
-      notes: "Controles dentro de vista factura: Pausar/Reanudar/Completar + Timeline"
+      completed_date: "2025-12-05"
+      notes: "COMPLETED 2025-12-05 - Pause/Resume/Complete controls, Communications Timeline, State Machine"
+      story_file: "docs/sprint-artifacts/3-7-control-manual-de-playbook-activo.md"
 
   # ============================================================
   # TECHNICAL PREREQUISITES
@@ -732,15 +736,18 @@ epic_3_detailed_plan:
   # ============================================================
 
   execution_plan:
-    current_phase: "Phase 4 - Development IN PROGRESS"
-    last_completed_story: "3.3"
-    next_story: "3.4"
-    next_story_status: "ready-for-dev - validated 2025-12-04, ready for implementation"
+    current_phase: "Phase 4 - Development COMPLETE"
+    last_completed_story: "3.7"
     current_story: null
+    current_story_status: null
+    next_story: null
+    next_story_status: null
 
-    # PAUSA: 2025-12-04 - Documentación revisada y actualizada
-    # Implementation Readiness Report: APROBADO
-    # Próximo paso: Validar/Implementar Story 3.4
+    # 2025-12-04: Story 3.4 COMPLETED - Code review passed ✅
+    # 2025-12-04: Story 3.4.1 COMPLETED - UI Consistency (bonus story)
+    # 2025-12-04: Story 3.5 COMPLETED - Activar Playbook en Factura ✅
+    # 2025-12-04: Story 3.6 COMPLETED - Worker de Procesamiento Automático ✅
+    # Próximo paso: Draft Story 3.7 con *create-story
 
     recommended_workflow:
       - step: 1
@@ -750,43 +757,59 @@ epic_3_detailed_plan:
         deliverables: ["Playbook schema", "Playbook Builder UI", "3 default playbooks"]
 
       - step: 2
-        action: "NEXT SESSION - Implement Story 3.4 (Collection Schema)"
-        status: "ready"
-        validated: "2025-12-04"
-        estimated_time: "3 hours"
-        deliverables: ["Prisma migration", "RLS policies", "Conditional UNIQUE index"]
+        action: "COMPLETED - Story 3.4 (Collection Schema) DONE ✅"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["Prisma migration", "RLS policies", "Conditional UNIQUE index", "Tests"]
         story_file: "docs/sprint-artifacts/3-4-schema-de-collections.md"
+        code_review: "completed"
 
       - step: 3
-        action: "Create Story 3.5 (Activar Playbook en Factura)"
-        status: "pending"
-        estimated_time: "5 hours"
-        deliverables: ["API endpoint", "Modal UI in invoice detail", "Playbook selector"]
+        action: "COMPLETED - Story 3.5 (Activar Playbook en Factura) drafted & validated"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["Story file drafted", "Validation report", "9 improvements applied"]
+        story_file: "docs/sprint-artifacts/3-5-activar-playbook-en-factura.md"
+        validation_report: "docs/sprint-artifacts/validation-report-3-5-2025-12-04.md"
+
+      - step: 3.5
+        action: "COMPLETED - Story 3.5 (Activar Playbook en Factura) implemented"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["collection-service.ts", "API endpoint", "Modal UI", "Badge component", "Tests"]
 
       - step: 4
-        action: "Setup Upstash Redis account (BEFORE Story 3.6)"
-        status: "pending"
-        estimated_time: "30 min"
-        deliverables: ["Upstash account", "Redis database created", "Env vars in Vercel"]
-        blocking: true
+        action: "COMPLETED - Code review Story 3.5 passed"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["Review feedback", "Fixes applied"]
 
       - step: 5
-        action: "Implement Story 3.6 (Worker de Procesamiento Automático)"
-        status: "pending"
-        estimated_time: "8 hours"
-        deliverables: ["Cron job", "Rate limiting", "MockMessageService", "Redis lock"]
+        action: "COMPLETED - Upstash Redis account configured"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["Upstash account", "Redis database created", "Env vars in Vercel"]
 
       - step: 6
-        action: "Implement Story 3.7 (Control Manual de Playbook Activo)"
-        status: "pending"
-        estimated_time: "5 hours"
-        deliverables: ["Pause/Resume/Complete UI in invoice", "Communications timeline"]
+        action: "COMPLETED - Story 3.6 (Worker de Procesamiento Automático) ✅"
+        status: "done"
+        completed_date: "2025-12-04"
+        deliverables: ["Cron job", "Rate limiting", "MockMessageService", "Redis lock", "Comprehensive tests"]
+        story_file: "docs/sprint-artifacts/3-6-worker-de-procesamiento-automatico.md"
+        code_review: "completed"
 
       - step: 7
+        action: "COMPLETED - Story 3.7 (Control Manual de Playbook Activo)"
+        status: "done"
+        completed_date: "2025-12-05"
+        deliverables: ["Pause/Resume/Complete UI in invoice", "Communications timeline", "State machine", "API endpoints"]
+
+      - step: 8
         action: "Execute Epic 3 retrospective"
         status: "pending"
         estimated_time: "1 hour"
         deliverables: ["Lessons learned", "Process improvements"]
+        notes: "All stories complete - Epic 3 ready for retrospective"
 
   # ============================================================
   # PHASE 4 APPROVAL
@@ -801,28 +824,20 @@ epic_3_detailed_plan:
     approval_notes: |
       Epic 3 is IN PROGRESS - Development Phase 4.
 
-      COMPLETED (2025-12-03):
-      - Story 3.1: Schema de Playbooks y Mensajes ✅
-      - Story 3.2: Builder de Playbooks ✅
-      - Story 3.3: Playbooks Pre-configurados ✅
+      COMPLETED:
+      - Story 3.1: Schema de Playbooks y Mensajes ✅ (2025-12-03)
+      - Story 3.2: Builder de Playbooks ✅ (2025-12-03)
+      - Story 3.3: Playbooks Pre-configurados ✅ (2025-12-03)
+      - Story 3.4: Schema de Collections ✅ (2025-12-04) - Code review PASSED
 
-      PAUSED (2025-12-04):
-      - Documentación PRD, Architecture, Epics revisada
-      - Implementation Readiness Report generado y aprobado
-      - Sprint Planning actualizado
-
-      NEXT SESSION:
-      - Story 3.4: Schema de Collections (drafted, ready)
-      - Then: 3.5 → 3.6 (requires Upstash) → 3.7 → Retro
-
-      PREREQUISITES for Story 3.6:
-      1. Setup Upstash Redis account
-      2. Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN env vars in Vercel
+      NEXT STEPS:
+      1. Draft Story 3.7 (Control Manual de Playbook Activo) with *create-story
+      2. Implement Story 3.7
+      3. Code review Story 3.7
+      4. Execute Epic 3 retrospective
 
     next_steps:
-      - "Validate and implement Story 3.4 (Schema de Collections)"
-      - "Create Story 3.5 (Activar Playbook en Factura)"
-      - "Setup Upstash Redis before Story 3.6"
-      - "Implement Story 3.6 (Worker) with MockMessageService"
-      - "Implement Story 3.7 (Control Manual in Invoice view)"
+      - "Create Story 3.7 draft with *create-story (Control Manual de Playbook Activo)"
+      - "Implement Story 3.7 (Pause/Resume/Complete controls in invoice view)"
+      - "Code review Story 3.7"
       - "Execute Epic 3 retrospective when complete"

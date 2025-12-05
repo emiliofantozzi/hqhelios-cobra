@@ -17,3 +17,22 @@ export const activatePlaybookSchema = z.object({
  * Tipo inferido del schema de activación
  */
 export type ActivatePlaybookInput = z.infer<typeof activatePlaybookSchema>;
+
+/**
+ * Schema para acciones manuales sobre playbook activo
+ * Story 3.7: Control Manual de Playbook Activo
+ */
+export const playbookActionSchema = z.object({
+  action: z.enum(['pause', 'resume', 'complete'], {
+    errorMap: () => ({ message: 'Acción inválida' }),
+  }),
+  note: z
+    .string()
+    .max(500, 'La nota no puede exceder 500 caracteres')
+    .optional(),
+});
+
+/**
+ * Tipo inferido del schema de acción
+ */
+export type PlaybookActionInput = z.infer<typeof playbookActionSchema>;

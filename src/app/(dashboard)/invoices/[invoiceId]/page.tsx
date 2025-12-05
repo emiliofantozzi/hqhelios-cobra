@@ -14,11 +14,14 @@ import { es } from 'date-fns/locale';
 import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge';
 import { PlaybookStatusBadge } from '@/components/invoices/playbook-status-badge';
 import { InvoiceActions } from '@/components/invoices/invoice-actions';
 import { ActivatePlaybookButton } from '@/components/invoices/activate-playbook-button';
+import { PlaybookControls } from '@/components/invoices/playbook-controls';
 import { InvoiceStatusHistory } from '@/components/invoices/invoice-status-history';
+import { CommunicationsTimeline } from '@/components/invoices/communications-timeline';
 import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
 
 interface ActiveCollection {
@@ -202,6 +205,14 @@ export default function InvoiceDetailPage() {
 
         {/* Actions */}
         <div className="flex gap-2 flex-wrap">
+          {invoice.activeCollection && (
+            <PlaybookControls
+              collectionId={invoice.activeCollection.id}
+              currentStatus={invoice.activeCollection.status}
+              playbookName={invoice.activeCollection.playbook.name}
+              invoiceId={invoice.id}
+            />
+          )}
           <ActivatePlaybookButton
             invoiceId={invoice.id}
             companyId={invoice.companies.id}
@@ -293,12 +304,27 @@ export default function InvoiceDetailPage() {
           )}
         </div>
 
-        {/* Sidebar - Status History */}
+        {/* Sidebar */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg border p-6">
-            <h2 className="text-lg font-semibold mb-4">Historial de Estados</h2>
-            <InvoiceStatusHistory history={history} />
-          </div>
+          <Tabs defaultValue="history" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="history">Historial</TabsTrigger>
+              <TabsTrigger value="communications" disabled={!invoice.activeCollection}>
+                Comunicaciones
+              </TabsTrigger>
+            </TabsList>
+            <TabsContent value="history" className="mt-4">
+              <div className="bg-white rounded-lg border p-6">
+                <h2 className="text-lg font-semibold mb-4">Historial de Estados</h2>
+                <InvoiceStatusHistory history={history} />
+              </div>
+            </TabsContent>
+            <TabsContent value="communications" className="mt-4">
+              {invoice.activeCollection && (
+                <CommunicationsTimeline collectionId={invoice.activeCollection.id} />
+              )}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </div>
