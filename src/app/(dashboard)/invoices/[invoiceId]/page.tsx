@@ -15,9 +15,20 @@ import { ArrowLeft } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge';
+import { PlaybookStatusBadge } from '@/components/invoices/playbook-status-badge';
 import { InvoiceActions } from '@/components/invoices/invoice-actions';
+import { ActivatePlaybookButton } from '@/components/invoices/activate-playbook-button';
 import { InvoiceStatusHistory } from '@/components/invoices/invoice-status-history';
 import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
+
+interface ActiveCollection {
+  id: string;
+  status: 'active' | 'paused' | 'awaiting_response' | 'pending_review';
+  playbook: {
+    id: string;
+    name: string;
+  };
+}
 
 interface Invoice {
   id: string;
@@ -38,6 +49,7 @@ interface Invoice {
     name: string;
     tax_id: string;
   };
+  activeCollection?: ActiveCollection | null;
 }
 
 interface StatusHistoryEntry {
@@ -169,6 +181,12 @@ export default function InvoiceDetailPage() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-3xl font-bold">{invoice.invoice_number}</h1>
             <InvoiceStatusBadge status={invoice.payment_status as InvoiceStatus} />
+            {invoice.activeCollection && (
+              <PlaybookStatusBadge
+                status={invoice.activeCollection.status}
+                playbookName={invoice.activeCollection.playbook.name}
+              />
+            )}
           </div>
           <p className="text-gray-500 mt-1">
             <Link
@@ -183,11 +201,19 @@ export default function InvoiceDetailPage() {
         </div>
 
         {/* Actions */}
-        <InvoiceActions
-          invoiceId={invoice.id}
-          currentStatus={invoice.payment_status as InvoiceStatus}
-          issueDate={new Date(invoice.issue_date)}
-        />
+        <div className="flex gap-2 flex-wrap">
+          <ActivatePlaybookButton
+            invoiceId={invoice.id}
+            companyId={invoice.companies.id}
+            currentStatus={invoice.payment_status}
+            hasActiveCollection={!!invoice.activeCollection}
+          />
+          <InvoiceActions
+            invoiceId={invoice.id}
+            currentStatus={invoice.payment_status as InvoiceStatus}
+            issueDate={new Date(invoice.issue_date)}
+          />
+        </div>
       </div>
 
       {/* Content Grid */}
