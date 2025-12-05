@@ -4,21 +4,18 @@
  * Pagina de lista de facturas
  * Story 2.5: Crear Facturas Manualmente
  * Story 2.6: Gestionar Estados de Facturas
+ * Story 3.4.1: UI Consistency - Tabla con TanStack Table
  *
  * @module app/(dashboard)/invoices/page
  */
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
 import { Button } from '@/components/ui/button';
-import { InvoiceStatusBadge } from '@/components/invoices/invoice-status-badge';
+import { InvoicesTable, type InvoiceRow } from '@/components/tables/invoices-table';
 import { Download } from 'lucide-react';
 import { exportInvoicesToCSV } from '@/lib/exports/export-invoices';
-import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
 
-interface Invoice {
+interface ApiInvoice {
   id: string;
   invoice_number: string;
   amount: number;
@@ -80,11 +77,27 @@ function LoadingState() {
 }
 
 /**
+ * Transforma datos de API al formato de InvoicesTable
+ */
+function transformToTableRows(invoices: ApiInvoice[]): InvoiceRow[] {
+  return invoices.map((invoice) => ({
+    id: invoice.id,
+    invoice_number: invoice.invoice_number,
+    amount: invoice.amount,
+    currency: invoice.currency,
+    issue_date: invoice.issue_date,
+    due_date: invoice.due_date,
+    payment_status: invoice.payment_status,
+    company_id: invoice.companies?.id || '',
+    company_name: invoice.companies?.name || 'N/A',
+  }));
+}
+
+/**
  * Pagina principal de facturas
  */
 export default function InvoicesPage() {
-  const router = useRouter();
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [invoices, setInvoices] = useState<ApiInvoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -103,6 +116,8 @@ export default function InvoicesPage() {
     }
     fetchInvoices();
   }, []);
+
+  const tableData = transformToTableRows(invoices);
 
   return (
     <div className="container mx-auto py-8">
@@ -136,85 +151,7 @@ export default function InvoicesPage() {
         ) : invoices.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="bg-white rounded-lg border overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Numero
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Empresa
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Monto
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Vencimiento
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Situacion
-                  </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Estado
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {invoices.map((invoice) => (
-                  <tr
-                    key={invoice.id}
-                    className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => router.push(`/invoices/${invoice.id}`)}
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-blue-600 hover:underline">
-                        {invoice.invoice_number}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {invoice.companies?.name || 'N/A'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {invoice.currency}{' '}
-                        {Number(invoice.amount).toLocaleString('es-MX', {
-                          minimumFractionDigits: 2,
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">
-                        {format(new Date(invoice.due_date), 'dd MMM yyyy', {
-                          locale: es,
-                        })}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {invoice.payment_status === 'pendiente' ? (
-                        new Date(invoice.due_date) < new Date() ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                            Vencida
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                            A tiempo
-                          </span>
-                        )
-                      ) : (
-                        <span className="text-sm text-gray-400">-</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <InvoiceStatusBadge status={invoice.payment_status as InvoiceStatus} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <InvoicesTable data={tableData} />
         )}
       </div>
     </div>

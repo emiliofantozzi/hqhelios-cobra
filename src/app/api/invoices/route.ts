@@ -17,6 +17,10 @@ import {
 /**
  * GET /api/invoices
  * Lista todas las facturas del tenant
+ *
+ * Query params:
+ * - includeInactive: boolean - Incluir facturas inactivas (default: false)
+ * - companyId: string - Filtrar por empresa específica (opcional)
  */
 export async function GET(request: NextRequest) {
   try {
@@ -29,8 +33,9 @@ export async function GET(request: NextRequest) {
 
     const searchParams = request.nextUrl.searchParams;
     const includeInactive = searchParams.get('includeInactive') === 'true';
+    const companyId = searchParams.get('companyId') || undefined;
 
-    const invoices = await getInvoices(tenantId, includeInactive);
+    const invoices = await getInvoices(tenantId, { includeInactive, companyId });
     return NextResponse.json(invoices);
   } catch (error) {
     console.error('Error in GET /api/invoices:', error);

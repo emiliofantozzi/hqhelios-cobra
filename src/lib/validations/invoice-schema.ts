@@ -119,3 +119,37 @@ export type CreateInvoiceInput = z.infer<typeof createInvoiceSchema>;
  */
 export const updateInvoiceSchema = invoiceBaseSchema.partial();
 export type UpdateInvoiceInput = z.infer<typeof updateInvoiceSchema>;
+
+/**
+ * Schema para editar factura desde UI (Story 3.4.1)
+ *
+ * Permite edición completa excepto paymentStatus (usar máquina de estados).
+ * Todos los campos son opcionales para permitir actualizaciones parciales.
+ *
+ * Campos editables:
+ * - invoiceNumber, companyId, amount, currency
+ * - issueDate, dueDate, paymentTermsDays
+ * - projectedPaymentDate, description, notes
+ *
+ * Campo NO editable (usar /api/invoices/[id]/status):
+ * - paymentStatus
+ */
+export const editInvoiceSchema = invoiceBaseSchema
+  .omit({ paymentStatus: true })
+  .partial()
+  .refine(
+    (data) => {
+      // Solo validar si ambas fechas están presentes
+      if (data.dueDate && data.issueDate) {
+        return data.dueDate >= data.issueDate;
+      }
+      return true;
+    },
+    {
+      message:
+        'La fecha de vencimiento debe ser igual o posterior a la fecha de emisión',
+      path: ['dueDate'],
+    }
+  );
+
+export type EditInvoiceInput = z.infer<typeof editInvoiceSchema>;

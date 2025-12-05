@@ -1,14 +1,15 @@
 'use client';
 
 /**
- * Formulario para crear facturas
+ * Formulario para crear/editar facturas
  * Story 2.5: Crear Facturas Manualmente
+ * Story 3.4.1: Editar Facturas
  *
  * @module components/forms/invoice-form
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { useForm, type Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -42,15 +43,48 @@ import {
 import { cn } from '@/lib/utils';
 import {
   createInvoiceSchema,
+  editInvoiceSchema,
   type CreateInvoiceInput,
+  type EditInvoiceInput,
   SUPPORTED_CURRENCIES,
   PAYMENT_STATUSES,
 } from '@/lib/validations/invoice-schema';
 
+/**
+ * Datos iniciales para modo edición
+ */
+interface InvoiceInitialData {
+  companyId: string;
+  invoiceNumber: string;
+  amount: number;
+  currency: string;
+  issueDate: string;
+  dueDate: string;
+  paymentTermsDays: number;
+  paymentStatus: string;
+  projectedPaymentDate?: string | null;
+  description?: string | null;
+  notes?: string | null;
+}
+
 interface InvoiceFormProps {
   /**
-   * ID de empresa pre-seleccionada (opcional)
-   * Si se pasa, el selector de empresa se deshabilita
+   * Modo del formulario: crear o editar
+   */
+  mode?: 'create' | 'edit';
+
+  /**
+   * ID de la factura (requerido en modo edit)
+   */
+  invoiceId?: string;
+
+  /**
+   * Datos iniciales para edición
+   */
+  initialData?: InvoiceInitialData;
+
+  /**
+   * ID de empresa pre-seleccionada (opcional, solo en modo create)
    */
   preselectedCompanyId?: string;
 
@@ -61,13 +95,12 @@ interface InvoiceFormProps {
 }
 
 /**
- * Formulario para crear facturas
- *
- * Soporta dos modos:
- * 1. Sin companyId: Usuario selecciona empresa del dropdown
- * 2. Con companyId: Empresa pre-seleccionada y campo disabled
+ * Formulario para crear/editar facturas
  */
 export function InvoiceForm({
+  mode = 'create',
+  invoiceId,
+  initialData,
   preselectedCompanyId,
   companies,
 }: InvoiceFormProps) {
@@ -75,46 +108,88 @@ export function InvoiceForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [apiError, setApiError] = useState<string | null>(null);
 
-  // Calcular fechas por defecto
+  const isEditMode = mode === 'edit';
+
+  // Calcular fechas por defecto (solo para crear)
   const today = new Date();
   const thirtyDaysLater = new Date(today);
   thirtyDaysLater.setDate(today.getDate() + 30);
 
-  const form = useForm<CreateInvoiceInput>({
-    resolver: zodResolver(createInvoiceSchema),
-    defaultValues: {
+  // Preparar valores por defecto
+  const getDefaultValues = (): CreateInvoiceInput => {
+    if (isEditMode && initialData) {
+      return {
+        companyId: initialData.companyId,
+        invoiceNumber: initialData.invoiceNumber,
+        amount: initialData.amount,
+        currency: initialData.currency as 'USD' | 'MXN' | 'EUR',
+        issueDate: new Date(initialData.issueDate),
+        dueDate: new Date(initialData.dueDate),
+        paymentTermsDays: initialData.paymentTermsDays,
+        paymentStatus: initialData.paymentStatus as typeof PAYMENT_STATUSES[number],
+        projectedPaymentDate: initialData.projectedPaymentDate
+          ? new Date(initialData.projectedPaymentDate)
+          : undefined,
+        description: initialData.description || '',
+        notes: initialData.notes || '',
+      };
+    }
+
+    return {
       companyId: preselectedCompanyId || '',
       invoiceNumber: '',
-      amount: undefined,
+      amount: undefined as unknown as number,
       currency: 'USD',
       issueDate: today,
       dueDate: thirtyDaysLater,
       paymentTermsDays: 30,
       paymentStatus: 'pendiente',
       projectedPaymentDate: undefined,
-      confirmedPaymentDate: undefined,
       description: '',
       notes: '',
-    },
+    };
+  };
+
+  // El form usa CreateInvoiceInput como tipo base.
+  // En modo edit, editInvoiceSchema valida (todos los campos opcionales, sin paymentStatus).
+  // En modo create, createInvoiceSchema valida (campos requeridos).
+  // El cast a Resolver es necesario porque zodResolver infiere tipos diferentes
+  // para cada schema, pero el form necesita un tipo consistente.
+  const form = useForm<CreateInvoiceInput>({
+    resolver: zodResolver(
+      isEditMode ? editInvoiceSchema : createInvoiceSchema
+    ) as unknown as Resolver<CreateInvoiceInput>,
+    defaultValues: getDefaultValues(),
   });
+
+  // Resetear form cuando cambian los datos iniciales (modo edit)
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- form.reset es estable,
+  // getDefaultValues se recalcula intencionalmente solo cuando initialData cambia
+  useEffect(() => {
+    if (isEditMode && initialData) {
+      form.reset(getDefaultValues());
+    }
+  }, [initialData, isEditMode, form]);
 
   /**
    * Handler de submit
    */
-  async function onSubmit(data: CreateInvoiceInput) {
+  async function onSubmit(data: CreateInvoiceInput | EditInvoiceInput) {
     setIsSubmitting(true);
     setApiError(null);
 
     try {
-      const response = await fetch('/api/invoices', {
-        method: 'POST',
+      const url = isEditMode ? `/api/invoices/${invoiceId}` : '/api/invoices';
+      const method = isEditMode ? 'PATCH' : 'POST';
+
+      const response = await fetch(url, {
+        method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...data,
-          issueDate: data.issueDate.toISOString(),
-          dueDate: data.dueDate.toISOString(),
+          issueDate: data.issueDate?.toISOString(),
+          dueDate: data.dueDate?.toISOString(),
           projectedPaymentDate: data.projectedPaymentDate?.toISOString() ?? null,
-          confirmedPaymentDate: data.confirmedPaymentDate?.toISOString() ?? null,
         }),
       });
 
@@ -127,18 +202,22 @@ export function InvoiceForm({
           return;
         }
 
-        throw new Error(error.error || 'Error al crear factura');
+        throw new Error(error.error || `Error al ${isEditMode ? 'actualizar' : 'crear'} factura`);
       }
 
-      const invoice = await response.json();
-
       // Navegar al detalle o a la lista
-      router.push('/invoices');
+      if (isEditMode && invoiceId) {
+        router.push(`/invoices/${invoiceId}`);
+      } else {
+        router.push('/invoices');
+      }
       router.refresh();
     } catch (error) {
-      console.error('Error creating invoice:', error);
+      console.error(`Error ${isEditMode ? 'updating' : 'creating'} invoice:`, error);
       setApiError(
-        error instanceof Error ? error.message : 'Error al crear factura'
+        error instanceof Error
+          ? error.message
+          : `Error al ${isEditMode ? 'actualizar' : 'crear'} factura`
       );
     } finally {
       setIsSubmitting(false);
@@ -164,7 +243,7 @@ export function InvoiceForm({
               <FormLabel>Empresa *</FormLabel>
               <Select
                 onValueChange={field.onChange}
-                defaultValue={field.value}
+                value={field.value}
                 disabled={!!preselectedCompanyId}
               >
                 <FormControl>
@@ -242,10 +321,7 @@ export function InvoiceForm({
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Moneda</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue />
@@ -354,7 +430,7 @@ export function InvoiceForm({
           />
         </div>
 
-        {/* Payment Terms & Status (lado a lado) */}
+        {/* Payment Terms (solo visible, paymentStatus solo en modo create) */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <FormField
             control={form.control}
@@ -382,118 +458,85 @@ export function InvoiceForm({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="paymentStatus"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Estado de Pago</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
+          {/* Estado de Pago - Solo visible en modo create */}
+          {!isEditMode && (
+            <FormField
+              control={form.control}
+              name="paymentStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Estado de Pago</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione estado" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PAYMENT_STATUSES.map((status) => (
+                        <SelectItem key={status} value={status}>
+                          {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>Estado inicial de la factura</FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* En modo edit, mostrar info de que el estado se cambia en otra pantalla */}
+          {isEditMode && (
+            <div className="flex items-end pb-2">
+              <p className="text-sm text-gray-500">
+                El estado de pago se gestiona desde la vista de detalle de la factura.
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Projected Payment Date */}
+        <FormField
+          control={form.control}
+          name="projectedPaymentDate"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Fecha Proyectada de Pago</FormLabel>
+              <Popover>
+                <PopoverTrigger asChild>
                   <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione estado" />
-                    </SelectTrigger>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        'w-full pl-3 text-left font-normal',
+                        !field.value && 'text-muted-foreground'
+                      )}
+                    >
+                      {field.value ? (
+                        format(field.value, 'PPP', { locale: es })
+                      ) : (
+                        <span>Sin fecha proyectada</span>
+                      )}
+                      <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                    </Button>
                   </FormControl>
-                  <SelectContent>
-                    {PAYMENT_STATUSES.map((status) => (
-                      <SelectItem key={status} value={status}>
-                        {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <FormDescription>Estado inicial de la factura</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
-
-        {/* Projected & Confirmed Payment Dates (lado a lado) */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="projectedPaymentDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha Proyectada de Pago</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP', { locale: es })
-                        ) : (
-                          <span>Sin fecha proyectada</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ?? undefined}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>Fecha estimada de pago (opcional)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="confirmedPaymentDate"
-            render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>Fecha Confirmada de Pago</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <FormControl>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          'w-full pl-3 text-left font-normal',
-                          !field.value && 'text-muted-foreground'
-                        )}
-                      >
-                        {field.value ? (
-                          format(field.value, 'PPP', { locale: es })
-                        ) : (
-                          <span>Sin fecha confirmada</span>
-                        )}
-                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                      </Button>
-                    </FormControl>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={field.value ?? undefined}
-                      onSelect={field.onChange}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                <FormDescription>Fecha comprometida por el cliente (opcional)</FormDescription>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={field.value ?? undefined}
+                    onSelect={field.onChange}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+              <FormDescription>Fecha estimada de pago (opcional)</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         {/* Description */}
         <FormField
@@ -533,9 +576,7 @@ export function InvoiceForm({
                   {...field}
                 />
               </FormControl>
-              <FormDescription>
-                Notas internas (max. 1000 caracteres)
-              </FormDescription>
+              <FormDescription>Notas internas (max. 1000 caracteres)</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -553,7 +594,13 @@ export function InvoiceForm({
           </Button>
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {isSubmitting ? 'Creando...' : 'Crear Factura'}
+            {isSubmitting
+              ? isEditMode
+                ? 'Guardando...'
+                : 'Creando...'
+              : isEditMode
+                ? 'Guardar Cambios'
+                : 'Crear Factura'}
           </Button>
         </div>
       </form>

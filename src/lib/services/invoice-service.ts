@@ -3,11 +3,12 @@
  * Story 2.5: Crear Facturas Manualmente
  * Story 2.6: Gestionar Estados de Facturas
  * Story 2.7: Importar Facturas desde CSV
+ * Story 3.4.1: Editar Facturas
  *
  * @module lib/services/invoice-service
  */
 import { getSupabaseClient } from '@/lib/db/supabase';
-import type { CreateInvoiceInput } from '@/lib/validations/invoice-schema';
+import type { CreateInvoiceInput, EditInvoiceInput } from '@/lib/validations/invoice-schema';
 import type { InvoiceStatusTransition } from '@/lib/validations/invoice-status-schema';
 import {
   INVOICE_STATUS,
@@ -224,16 +225,27 @@ export async function getInvoiceById(invoiceId: string, tenantId: string) {
 }
 
 /**
+ * Opciones para filtrar facturas
+ */
+interface GetInvoicesOptions {
+  includeInactive?: boolean;
+  companyId?: string;
+}
+
+/**
  * Obtiene todas las facturas del tenant
  *
  * @param tenantId - ID del tenant
- * @param includeInactive - Si incluir facturas inactivas (default: false)
+ * @param options - Opciones de filtrado
+ * @param options.includeInactive - Si incluir facturas inactivas (default: false)
+ * @param options.companyId - Filtrar por empresa específica (opcional)
  * @returns Promise con lista de facturas
  */
 export async function getInvoices(
   tenantId: string,
-  includeInactive: boolean = false
+  options: GetInvoicesOptions = {}
 ) {
+  const { includeInactive = false, companyId } = options;
   const supabase = await getSupabaseClient(tenantId);
 
   let query = supabase
@@ -249,6 +261,10 @@ export async function getInvoices(
 
   if (!includeInactive) {
     query = query.eq('is_active', true);
+  }
+
+  if (companyId) {
+    query = query.eq('company_id', companyId);
   }
 
   const { data, error } = await query;
@@ -464,6 +480,165 @@ export async function createInitialStatusHistory(
     console.error('Error creating initial status history:', error);
     // No falla la operación principal
   }
+}
+
+// ============================================
+// Story 3.4.1: Editar Facturas
+// ============================================
+
+/**
+ * Resultado de operación de actualización de factura
+ */
+interface UpdateInvoiceResult {
+  success: boolean;
+  invoice?: {
+    id: string;
+    invoiceNumber: string;
+  };
+  error?: {
+    code: string;
+    message: string;
+  };
+}
+
+/**
+ * Actualiza una factura existente
+ *
+ * Validaciones de negocio:
+ * 1. Verifica que la factura existe y pertenece al tenant
+ * 2. Si se cambia companyId, verifica que la empresa esté activa
+ * 3. Si se cambia invoiceNumber, verifica que sea único en el tenant
+ * 4. No permite cambiar paymentStatus (usar updateInvoiceStatus)
+ *
+ * @param invoiceId - ID de la factura a actualizar
+ * @param tenantId - ID del tenant (obtenido del JWT)
+ * @param data - Datos validados con editInvoiceSchema
+ * @returns Resultado con factura actualizada o error
+ */
+export async function updateInvoice(
+  invoiceId: string,
+  tenantId: string,
+  data: EditInvoiceInput
+): Promise<UpdateInvoiceResult> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  // 1. Verificar que la factura existe y pertenece al tenant
+  const { data: existingInvoice, error: fetchError } = await supabase
+    .from('invoices')
+    .select('id, invoice_number, company_id')
+    .eq('tenant_id', tenantId)
+    .eq('id', invoiceId)
+    .single();
+
+  if (fetchError || !existingInvoice) {
+    return {
+      success: false,
+      error: {
+        code: 'INVOICE_NOT_FOUND',
+        message: 'Factura no encontrada',
+      },
+    };
+  }
+
+  // 2. Si se cambia companyId, verificar que la empresa esté activa
+  if (data.companyId && data.companyId !== existingInvoice.company_id) {
+    const { data: company, error: companyError } = await supabase
+      .from('companies')
+      .select('id, is_active')
+      .eq('tenant_id', tenantId)
+      .eq('id', data.companyId)
+      .single();
+
+    if (companyError || !company) {
+      return {
+        success: false,
+        error: {
+          code: 'COMPANY_NOT_FOUND',
+          message: 'La empresa seleccionada no existe',
+        },
+      };
+    }
+
+    if (!company.is_active) {
+      return {
+        success: false,
+        error: {
+          code: 'COMPANY_INACTIVE',
+          message: 'No se pueden asignar facturas a empresas inactivas',
+        },
+      };
+    }
+  }
+
+  // 3. Si se cambia invoiceNumber, verificar unicidad en el tenant
+  if (data.invoiceNumber && data.invoiceNumber !== existingInvoice.invoice_number) {
+    const { data: duplicateInvoice } = await supabase
+      .from('invoices')
+      .select('id')
+      .eq('tenant_id', tenantId)
+      .eq('invoice_number', data.invoiceNumber)
+      .neq('id', invoiceId)
+      .maybeSingle();
+
+    if (duplicateInvoice) {
+      return {
+        success: false,
+        error: {
+          code: 'DUPLICATE_INVOICE_NUMBER',
+          message: `El número de factura ${data.invoiceNumber} ya existe`,
+        },
+      };
+    }
+  }
+
+  // 4. Preparar datos para actualización
+  const updateData: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (data.companyId !== undefined) updateData.company_id = data.companyId;
+  if (data.invoiceNumber !== undefined) updateData.invoice_number = data.invoiceNumber;
+  if (data.amount !== undefined) updateData.amount = data.amount;
+  if (data.currency !== undefined) updateData.currency = data.currency;
+  if (data.issueDate !== undefined) updateData.issue_date = data.issueDate.toISOString().split('T')[0];
+  if (data.dueDate !== undefined) updateData.due_date = data.dueDate.toISOString().split('T')[0];
+  if (data.paymentTermsDays !== undefined) updateData.payment_terms_days = data.paymentTermsDays;
+  if (data.projectedPaymentDate !== undefined) {
+    updateData.projected_payment_date = data.projectedPaymentDate
+      ? data.projectedPaymentDate.toISOString().split('T')[0]
+      : null;
+  }
+  if (data.description !== undefined) updateData.description = data.description || null;
+  if (data.notes !== undefined) updateData.notes = data.notes || null;
+
+  // 5. Actualizar factura
+  const { error: updateError } = await supabase
+    .from('invoices')
+    .update(updateData)
+    .eq('tenant_id', tenantId)
+    .eq('id', invoiceId);
+
+  if (updateError) {
+    console.error('Error updating invoice:', updateError);
+    return {
+      success: false,
+      error: {
+        code: 'UPDATE_FAILED',
+        message: 'Error al actualizar la factura',
+      },
+    };
+  }
+
+  const finalInvoiceNumber = data.invoiceNumber || existingInvoice.invoice_number;
+  console.log(`Invoice updated: ${invoiceId} (${finalInvoiceNumber})`);
+
+  return {
+    success: true,
+    invoice: {
+      id: invoiceId,
+      invoiceNumber: finalInvoiceNumber,
+    },
+  };
 }
 
 // ============================================
