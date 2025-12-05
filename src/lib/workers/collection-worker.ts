@@ -8,8 +8,8 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { getAdminSupabaseClient } from '@/lib/db/supabase';
 import { replaceTemplateVariables } from '@/lib/utils/template-replacer';
-import { messageService } from '@/lib/services/messaging/mock-message-service';
-import { MessageChannel } from '@/lib/services/messaging/types';
+import { messageService, MessageChannel } from '@/lib/services/messaging';
+import { createSentMessageRecord } from '@/lib/services/sent-message-service';
 import { acquireLock, releaseLock } from './distributed-lock';
 import { checkRateLimits, buildTenantStats, RateLimitResult } from './rate-limits';
 import { workerConfig } from './config';
@@ -333,6 +333,20 @@ async function processCollection(
 
   // Update collection based on result
   await updateCollectionAfterSend(supabase, collection, nextMessage, sendResult.success);
+
+  // Create sent message record if successful (Epic 4 - Story 4.1)
+  if (sendResult.success && sendResult.messageId) {
+    await createSentMessageRecord({
+      tenantId: collection.tenant_id,
+      collectionId: collection.id,
+      contactId: collection.primary_contact_id,
+      playbookMessageId: nextMessage.id,
+      channel: nextMessage.channel as MessageChannel,
+      subject: subject,
+      body: body,
+      externalMessageId: sendResult.messageId,
+    });
+  }
 
   if (!sendResult.success) {
     console.log(
