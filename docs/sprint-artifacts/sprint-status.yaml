@@ -1,6 +1,6 @@
 # Sprint Status - COBRA-BMAD
-# Actualizado: 2025-12-07
-# Estado Actual: Epic 4 EN PROGRESO - Story 4.1 y 4.2 completadas, Story 4.3 ready-for-dev
+# Actualizado: 2025-12-08
+# Estado Actual: Epic 4 COMPLETADO - Stories 4.1, 4.2, 4.3 done
 
 # ============================================================
 # DEFINICIONES DE ESTADO
@@ -70,18 +70,18 @@ development_status:
   epic-3-retrospective: done
 
   # ============================================================
-  # Epic 4: Comunicación por Email 🎯 EN PROGRESO
+  # Epic 4: Comunicación por Email ✅ COMPLETADO
   # ============================================================
   # FRs: FR21, FR23, FR24 (FR22 WhatsApp → Epic 5 per ADR-005)
   # Dependencias: Epic 3 (completado)
   # Stories: 3
-  # Actualizado: 2025-12-07
-  # Story 4.2 completada: Historial de mensajes con code review fixes
-  # Commit: 0ecd5d4 - Incluye fixes de seguridad (tenant verification)
-  epic-4: in-progress
+  # Completado: 2025-12-08
+  # Story 4.3: Webhooks de delivery status
+  # Commit: (pendiente) - Endpoint POST /api/webhooks/resend
+  epic-4: done
   4-1-envio-de-emails-transaccionales: done
   4-2-historial-de-mensajes-enviados: done
-  4-3-webhooks-de-delivery-status: ready-for-dev
+  4-3-webhooks-de-delivery-status: done
   epic-4-retrospective: optional
 
   # ============================================================
@@ -145,27 +145,32 @@ completed_epics:
       - "Rate limiting por tenant/contacto"
       - "UI de control manual (pause/resume/complete)"
 
+  epic-4:
+    name: "Comunicación por Email"
+    completed: "2025-12-08"
+    stories: 3
+    highlights:
+      - "Envío emails via Resend API"
+      - "Historial de mensajes con timeline UI"
+      - "Webhooks delivery status (svix verification)"
+      - "Badges de estado: sent/delivered/bounced/failed"
+
 # ============================================================
-# PRÓXIMO PASO: Story 4.3 - Webhooks de Delivery Status
+# PRÓXIMO PASO: Epic 5 - Loop de Respuestas e IA
 # ============================================================
-# Story 4.3 está ready-for-dev
+# Epic 4 completado. Siguiente epic disponible: Epic 5.
 #
-# Prerequisitos completados:
-#   ✅ Story 4.1: Envío de emails via Resend (external_message_id guardado)
-#   ✅ Story 4.2: Historial de mensajes (UI para ver delivery_status)
+# Epic 4 terminado con:
+#   ✅ Story 4.1: Envío de emails via Resend
+#   ✅ Story 4.2: Historial de mensajes enviados
+#   ✅ Story 4.3: Webhooks de delivery status
 #
-# Para Story 4.3 necesitas:
-#   - Configurar webhook en Resend Dashboard
-#   - Variable de entorno: RESEND_WEBHOOK_SECRET
-#   - Librería svix para verificación de firmas
+# Para Epic 5 necesitas:
+#   - Configurar n8n para captura de respuestas
+#   - Endpoint /api/customer-response
+#   - Integración con IA para sugerencias
 #
-# Lo que hace Story 4.3:
-#   - Endpoint POST /api/webhooks/resend
-#   - Mapea eventos Resend → delivery_status
-#   - Actualiza sent_messages.delivery_status en tiempo real
-#   - Idempotencia y validación de firma
-#
-# Referencia: docs/epics/epic-4-comunicacion.md#Story 4.3
+# Referencia: docs/epics/epic-5-respuestas-ia.md
 
 # ===========================================
 # CLERK - MOCK USER FOR PRODUCTION TESTING (PLAYWRIGHT)
