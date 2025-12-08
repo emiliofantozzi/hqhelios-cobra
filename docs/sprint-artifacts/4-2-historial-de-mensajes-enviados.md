@@ -1,6 +1,6 @@
 # Story 4.2: Historial de Mensajes Enviados
 
-Status: Ready for Review
+Status: Done
 
 ## Story
 
@@ -805,3 +805,25 @@ Claude Opus 4.5 (claude-opus-4-5-20251101)
 | Fecha | Cambio |
 |-------|--------|
 | 2025-12-07 | Implementación completa de Story 4.2 - 29 tests, build exitoso |
+| 2025-12-07 | Code Review completado - 4 fixes aplicados |
+| 2025-12-07 | Deploy a producción - commit 0ecd5d4 |
+
+### Code Review Summary (2025-12-07)
+
+**Issues encontrados y corregidos:**
+
+| Severidad | Issue | Fix |
+|-----------|-------|-----|
+| 🔴 CRÍTICO | Falta verificación tenant_id en API | Agregado `getTenantId()` + filtro en servicio |
+| 🟡 MEDIO | Hook `useCollectionMessages` no usado | Eliminado `src/lib/api/collections.ts` |
+| 🟡 MEDIO | Colores badges no coinciden con AC3 | delivered=verde, bounced=naranja |
+| 🟢 BAJO | Tildes faltantes | "envío", "falló" corregidos |
+
+**Archivos modificados en code review:**
+- `src/lib/services/message-service.ts` - Agregado parámetro `tenantId`
+- `src/app/api/collections/[collectionId]/messages/route.ts` - Agregado `getTenantId()`
+- `src/components/collections/message-timeline.tsx` - Colores de badges
+- `src/components/collections/message-detail-dialog.tsx` - Tildes
+- `__tests__/services/message-service.test.ts` - Actualizado mock
+- `__tests__/components/message-detail-dialog.test.tsx` - Actualizado texto
+- Eliminado: `src/lib/api/collections.ts`

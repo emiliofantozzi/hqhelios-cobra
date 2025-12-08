@@ -1,42 +1,34 @@
-# generated: 2025-12-01
-# project: cobra-bmad
-# project_key: cobra-bmad
-# tracking_system: file-system
-# story_location: '{project-root}/docs/sprint-artifacts'
+# Sprint Status - COBRA-BMAD
+# Actualizado: 2025-12-07
+# Estado Actual: Epic 4 EN PROGRESO - Story 4.1 y 4.2 completadas, Story 4.3 ready-for-dev
 
-# STATUS DEFINITIONS:
-# ==================
+# ============================================================
+# DEFINICIONES DE ESTADO
+# ============================================================
 # Epic Status:
-#   - backlog: Epic exists in epic file but not contexted
-#   - contexted: Epic tech context created (required before drafting stories)
+#   - backlog: Epic existe pero no iniciado
+#   - contexted: Contexto técnico creado (requerido antes de drafts)
+#   - done: Epic completado con retrospectiva
 #
 # Story Status:
-#   - backlog: Story only exists in epic file
-#   - drafted: Story file created in stories folder by *create-story
-#   - ready-for-dev: Draft approved and story context created by *story-ready
-#   - in-progress: Developer actively working on implementation by *dev-story
-#   - review: Implementation complete, ready for review by *code-review
-#   - done: Story completed by *story-done
+#   - backlog: Story solo existe en archivo de epic
+#   - drafted: Story file creado con *create-story
+#   - ready-for-dev: Draft aprobado
+#   - in-progress: Developer trabajando
+#   - review: Implementación completa, code review pendiente
+#   - done: Story completada
 #
 # Retrospective Status:
-#   - optional: Can be completed but not required
-#   - completed: Retrospective has been done by *retrospective
-#
-# WORKFLOW NOTES:
-# ===============
-# - Epics should be marked `contexted` before stories can be marked beyond `backlog`
-# - SM typically drafts next story ONLY after previous one is 'done' to incorporate learnings
-# - Dev moves story to 'review', SM reviews, then Dev moves to 'done'
+#   - optional: Puede completarse pero no requerido
+#   - completed: Retrospectiva ejecutada
 
-generated: 2025-12-04
-project: cobra-bmad
-project_key: cobra-bmad
-tracking_system: file-system
-story_location: '{project-root}/docs/sprint-artifacts'
+# ============================================================
+# ESTADO DE DESARROLLO
+# ============================================================
 
 development_status:
   # ============================================================
-  # Epic 1: Foundation Setup ✅ COMPLETED
+  # Epic 1: Foundation Setup ✅ COMPLETADO
   # ============================================================
   epic-1: done
   1-1-configurar-supabase-con-rls-multi-tenant: done
@@ -46,7 +38,7 @@ development_status:
   epic-1-retrospective: done
 
   # ============================================================
-  # Epic 2: CRM y Gestión de Clientes ✅ COMPLETED
+  # Epic 2: CRM y Gestión de Clientes ✅ COMPLETADO
   # ============================================================
   epic-2: done
   2-1-crear-empresas-cliente: done
@@ -61,32 +53,35 @@ development_status:
   epic-2-retrospective: done
 
   # ============================================================
-  # Epic 3: Motor de Cobranzas Automatizado 🟡 IN PROGRESS
+  # Epic 3: Motor de Cobranzas Automatizado ✅ COMPLETADO
   # ============================================================
-  # Party Mode Session: 2025-12-03
-  # Gaps Resolved: C1 (IMessageService), C2 (State Machine), C3 (Rate Limiting)
-  # Risk Mitigated: R-001 (Upstash Redis lock)
-  # Schema Refinement Sprint: 2025-12-04 (COMPLETED)
-  # Implementation Readiness Review: 2025-12-04 (APPROVED)
-  epic-3: in-progress
+  # Completado: 2025-12-05
+  # Commit final: fe8d060
+  # Retrospectiva: epic-3-retro-2025-12-05.md
+  epic-3: done
   3-1-schema-de-playbooks-y-mensajes: done
   3-2-builder-de-playbooks: done
   3-3-playbooks-pre-configurados-seed: done
   3-4-schema-de-collections: done
-  3-4-1-ui-consistency: done  # 2025-12-04 - Tabla facturas + edición + vista empresa
-  3-5-activar-playbook-en-factura: done  # 2025-12-04 - Implemented
-  3-6-worker-de-procesamiento-automatico: done  # 2025-12-04 - Code review completed
-  3-7-control-manual-de-playbook-activo: done  # 2025-12-05 - Implemented, pending prod testing
-  epic-3-retrospective: optional
+  3-4-1-ui-consistency: done
+  3-5-activar-playbook-en-factura: done
+  3-6-worker-de-procesamiento-automatico: done
+  3-7-control-manual-de-playbook-activo: done
+  epic-3-retrospective: done
 
   # ============================================================
-  # Epic 4: Comunicación Multicanal
+  # Epic 4: Comunicación por Email 🎯 EN PROGRESO
   # ============================================================
-  epic-4: backlog
-  4-1-envio-de-emails-transaccionales: backlog
-  4-2-envio-de-whatsapp: backlog
-  4-3-historial-de-mensajes-enviados: backlog
-  4-4-webhooks-de-delivery-status: backlog
+  # FRs: FR21, FR23, FR24 (FR22 WhatsApp → Epic 5 per ADR-005)
+  # Dependencias: Epic 3 (completado)
+  # Stories: 3
+  # Actualizado: 2025-12-07
+  # Story 4.2 completada: Historial de mensajes con code review fixes
+  # Commit: 0ecd5d4 - Incluye fixes de seguridad (tenant verification)
+  epic-4: in-progress
+  4-1-envio-de-emails-transaccionales: done
+  4-2-historial-de-mensajes-enviados: done
+  4-3-webhooks-de-delivery-status: ready-for-dev
   epic-4-retrospective: optional
 
   # ============================================================
@@ -114,730 +109,67 @@ development_status:
   epic-6-retrospective: optional
 
 # ============================================================
-# EPIC 2 DETAILED SPRINT PLANNING
+# RESUMEN DE EPICS COMPLETADOS
 # ============================================================
-# Generated: 2025-12-02
-# Status: Ready for Phase 4 (Development)
-# Total Stories: 9
-# Implementation Readiness: Approved by Architect
+# Para referencia rápida - detalles completos en retrospectivas
 
-epic_2_detailed_plan:
-  epic_id: "epic-2"
-  epic_name: "CRM y Gestión de Clientes"
-  phase: "Phase 4 - Implementation COMPLETE"
-  status: "done"
-  total_stories: 9
-  completed_stories: 9
+completed_epics:
+  epic-1:
+    name: "Foundation Setup"
+    completed: "2025-12-01"
+    stories: 4
+    highlights:
+      - "Supabase + RLS multi-tenant"
+      - "Clerk con custom claims"
+      - "Auto-registro con creación de tenant"
 
-  # ============================================================
-  # CRITICAL STORY SEQUENCE
-  # ============================================================
-  # Stories MUST be executed in this order to respect dependencies
-  # Each layer depends on completion of previous layer
+  epic-2:
+    name: "CRM y Gestión de Clientes"
+    completed: "2025-12-03"
+    stories: 9
+    highlights:
+      - "CRUD empresas/contactos/facturas"
+      - "Dashboard con 4 KPIs"
+      - "Import/Export CSV"
+      - "Máquina de estados de facturas"
 
-  story_sequence:
-    foundation_layer:
-      # MUST execute first - creates empresas table/UI
-      - "2.1"
-
-    dependency_layer_1:
-      # Depends on 2.1 (empresas must exist)
-      - "2.3"
-
-    core_functionality:
-      # Depends on 2.1 (empresas) and 2.3 (contactos)
-      - "2.5"
-
-    state_management:
-      # Depends on 2.5 (invoices must exist for state transitions)
-      - "2.6"
-
-    parallel_features:
-      # Can execute concurrently after 2.6 is complete
-      # All depend on foundation being ready
-      - "2.2"  # Edit empresas (needs 2.1 + 2.6 state management)
-      - "2.4"  # Edit contactos (needs 2.3 + 2.6 state management)
-      - "2.7"  # CSV import (needs 2.1, 2.5, 2.6)
-      - "2.9"  # CSV export (needs 2.1, 2.3, 2.5)
-
-    final_integration:
-      # Dashboard runs last - depends on all data being available
-      - "2.8"
-
-  # ============================================================
-  # STORY DETAILS
-  # ============================================================
-
-  stories:
-    - id: "2.1"
-      title: "Crear Empresas Cliente"
-      status: "done"
-      priority: "critical"
-      dependencies: []
-      blocks: ["2.2", "2.3", "2.4", "2.5", "2.7", "2.9"]
-      estimated_points: 5
-      acceptance_criteria_count: 8
-      notes: "Foundation story - MUST execute first"
-
-    - id: "2.2"
-      title: "Listar y Editar Empresas"
-      status: "done"
-      priority: "high"
-      dependencies: ["2.1", "2.6"]
-      blocks: []
-      estimated_points: 3
-      acceptance_criteria_count: 7
-      notes: "Can run in parallel with 2.4, 2.7, 2.9 after 2.6 is done"
-
-    - id: "2.3"
-      title: "Gestionar Contactos de Empresa"
-      status: "done"
-      priority: "critical"
-      dependencies: ["2.1"]
-      blocks: ["2.4", "2.5", "2.7", "2.9"]
-      estimated_points: 5
-      acceptance_criteria_count: 9
-      notes: "Execute immediately after 2.1"
-
-    - id: "2.4"
-      title: "Editar y Desactivar Contactos"
-      status: "done"
-      priority: "high"
-      dependencies: ["2.3", "2.6"]
-      blocks: []
-      estimated_points: 3
-      acceptance_criteria_count: 6
-      notes: "Can run in parallel with 2.2, 2.7, 2.9 after 2.6 is done"
-
-    - id: "2.5"
-      title: "Crear Facturas Manualmente"
-      status: "done"
-      priority: "critical"
-      dependencies: ["2.1", "2.3"]
-      blocks: ["2.6", "2.7", "2.8", "2.9"]
-      estimated_points: 5
-      acceptance_criteria_count: 10
-      notes: "Core invoice functionality - blocks state management"
-
-    - id: "2.6"
-      title: "Gestionar Estados de Facturas"
-      status: "done"
-      priority: "critical"
-      dependencies: ["2.5"]
-      blocks: ["2.2", "2.4", "2.7", "2.8", "2.9"]
-      estimated_points: 5
-      acceptance_criteria_count: 9
-      notes: "State machine implementation - blocks parallel features"
-
-    - id: "2.7"
-      title: "Importar Facturas desde CSV"
-      status: "done"
-      priority: "medium"
-      dependencies: ["2.1", "2.5", "2.6"]
-      blocks: []
-      estimated_points: 5
-      acceptance_criteria_count: 8
-      notes: "Can run in parallel with 2.2, 2.4, 2.9 after 2.6 is done"
-
-    - id: "2.8"
-      title: "Dashboard Básico con KPIs"
-      status: "done"
-      priority: "high"
-      dependencies: ["2.1", "2.3", "2.5", "2.6"]
-      blocks: []
-      estimated_points: 5
-      acceptance_criteria_count: 8
-      notes: "COMPLETED 2025-12-03 - Dashboard with 4 KPIs, overdue chart, critical invoices table"
-
-    - id: "2.9"
-      title: "Exportar Datos a CSV"
-      status: "done"
-      priority: "high"
-      dependencies: ["2.1", "2.3", "2.5"]
-      blocks: []
-      estimated_points: 3
-      acceptance_criteria_count: 7
-      notes: "COMPLETED 2025-12-03 - Client-side CSV export for companies, invoices, contacts. UTF-8 BOM for Excel compatibility."
-
-  # ============================================================
-  # RISK MITIGATION
-  # ============================================================
-
-  risk_mitigation:
-    - risk: "Dependency chain could cause delays if stories fail"
-      severity: "medium"
-      mitigation: "Strict sequence enforcement - 2.1 → 2.3 → 2.5 → 2.6 → parallel features"
-      status: "mitigated"
-
-    - risk: "State machine complexity in 2.6 could introduce bugs"
-      severity: "medium"
-      mitigation: "Story 2.6 includes comprehensive state transition table and validation rules"
-      status: "mitigated"
-
-    - risk: "CSV import/export could have encoding issues with Spanish characters"
-      severity: "low"
-      mitigation: "Stories 2.7 and 2.9 specify UTF-8 with BOM for Excel compatibility"
-      status: "mitigated"
-
-    - risk: "Multi-tenancy could be bypassed if RLS not properly enforced"
-      severity: "high"
-      mitigation: "All stories enforce RLS at database level - tested in Story 1.1"
-      status: "mitigated"
-
-  # ============================================================
-  # EXECUTION PLAN
-  # ============================================================
-
-  execution_plan:
-    current_phase: "Phase 4 - Development COMPLETE"
-    next_story: "epic-2-retrospective"
-    current_story: null
-    current_story_status: "all-stories-done"
-
-    recommended_workflow:
-      - step: 1
-        action: "Dev agent executes Story 2.1"
-        estimated_time: "5 hours"
-        deliverables: ["Companies CRUD", "RLS policies", "UI pages", "Tests"]
-
-      - step: 2
-        action: "Code review Story 2.1"
-        estimated_time: "1 hour"
-        deliverables: ["Review feedback", "Fixes applied"]
-
-      - step: 3
-        action: "Mark 2.1 as DONE in sprint-status.yaml"
-        estimated_time: "5 min"
-        deliverables: ["Updated sprint status"]
-
-      - step: 4
-        action: "Dev agent executes Story 2.3"
-        estimated_time: "5 hours"
-        deliverables: ["Contacts CRUD", "RLS policies", "UI pages", "Tests"]
-
-      - step: 5
-        action: "Continue sequence: 2.5 → 2.6 → parallel (2.2, 2.4, 2.7, 2.9) → 2.8"
-        estimated_time: "~30 hours total"
-        deliverables: ["All Epic 2 functionality complete"]
-
-      - step: 6
-        action: "Execute Epic 2 retrospective"
-        estimated_time: "1 hour"
-        deliverables: ["Lessons learned", "Process improvements"]
-
-  # ============================================================
-  # VALIDATION CHECKLIST
-  # ============================================================
-
-  validation_checklist:
-    epic_level:
-      - item: "Epic 2 file exists and is complete"
-        status: "✓"
-      - item: "All functional requirements mapped to stories"
-        status: "✓"
-      - item: "FR11 (CSV export) clarified with PO"
-        status: "✓"
-      - item: "Business value clear for each story"
-        status: "✓"
-      - item: "MVP scope defined"
-        status: "✓"
-
-    story_level:
-      - item: "All 9 stories have clear titles"
-        status: "✓"
-      - item: "All stories have acceptance criteria (6-10 AC each)"
-        status: "✓"
-      - item: "All stories have technical specifications"
-        status: "✓"
-      - item: "All stories have Definition of Done"
-        status: "✓"
-      - item: "Dependencies explicitly documented"
-        status: "✓"
-      - item: "No circular dependencies identified"
-        status: "✓"
-
-    technical_validation:
-      - item: "Database schema defined for all entities"
-        status: "✓"
-      - item: "RLS policies specified for all tables"
-        status: "✓"
-      - item: "API routes documented"
-        status: "✓"
-      - item: "UI components specified"
-        status: "✓"
-      - item: "Form validations using Zod schemas"
-        status: "✓"
-
-    dependency_validation:
-      - item: "Critical path identified: 2.1 → 2.3 → 2.5 → 2.6"
-        status: "✓"
-      - item: "Parallel work opportunities identified"
-        status: "✓"
-      - item: "No blocking issues"
-        status: "✓"
-      - item: "Sequence documented in this file"
-        status: "✓"
-
-  # ============================================================
-  # PHASE 4 APPROVAL
-  # ============================================================
-
-  phase_4_approval:
-    approved: true
-    approved_by: "Scrum Master (Bob)"
-    approved_date: "2025-12-02"
-
-    approval_notes: |
-      Epic 2 is READY for Phase 4 (Development).
-
-      All prerequisites met:
-      - 9 stories created and validated
-      - Story 2.9 added per Product Owner decision (FR11)
-      - Dependencies mapped and sequenced
-      - Risks identified and mitigated
-      - Implementation readiness report reviewed
-
-      Dev agent can start with Story 2.1 immediately.
-
-      Execution sequence: 2.1 → 2.3 → 2.5 → 2.6 → (2.2, 2.4, 2.7, 2.9) → 2.8
-
-    next_steps:
-      - "Dev agent: Execute Story 2.1 in next session"
-      - "Follow strict sequencing to avoid blocking issues"
-      - "Mark stories as DONE in sprint-status.yaml as completed"
-      - "Run code review after each story"
-      - "Execute retrospective when Epic 2 is complete"
+  epic-3:
+    name: "Motor de Cobranzas Automatizado"
+    completed: "2025-12-05"
+    stories: 8
+    highlights:
+      - "Playbook Builder con drag & drop"
+      - "3 playbooks pre-configurados"
+      - "Collection schema con state machine"
+      - "Worker automático con Redis lock"
+      - "Rate limiting por tenant/contacto"
+      - "UI de control manual (pause/resume/complete)"
 
 # ============================================================
-# SCHEMA REFINEMENT SPRINT (Between Epic 2 & Epic 3.4)
+# PRÓXIMO PASO: Story 4.3 - Webhooks de Delivery Status
 # ============================================================
-# Generated: 2025-12-04
-# Status: COMPLETED
-# Purpose: Schema adjustments based on real-world usage feedback
+# Story 4.3 está ready-for-dev
+#
+# Prerequisitos completados:
+#   ✅ Story 4.1: Envío de emails via Resend (external_message_id guardado)
+#   ✅ Story 4.2: Historial de mensajes (UI para ver delivery_status)
+#
+# Para Story 4.3 necesitas:
+#   - Configurar webhook en Resend Dashboard
+#   - Variable de entorno: RESEND_WEBHOOK_SECRET
+#   - Librería svix para verificación de firmas
+#
+# Lo que hace Story 4.3:
+#   - Endpoint POST /api/webhooks/resend
+#   - Mapea eventos Resend → delivery_status
+#   - Actualiza sent_messages.delivery_status en tiempo real
+#   - Idempotencia y validación de firma
+#
+# Referencia: docs/epics/epic-4-comunicacion.md#Story 4.3
 
-schema_refinement_sprint:
-  date: "2025-12-04"
-  status: "completed"
-  trigger: "User discovered field adjustments needed during real-world testing"
-
-  changes_made:
-    invoices:
-      added_fields:
-        - field: "payment_terms_days"
-          type: "INTEGER DEFAULT 30"
-          notes: "Moved from companies table - payment terms per invoice"
-        - field: "projected_payment_date"
-          type: "DATE NULL"
-          notes: "Optional estimated payment date"
-      ui_changes:
-        - "Added paymentTermsDays input to invoice form"
-        - "Added projectedPaymentDate date picker"
-        - "Added paymentStatus selector at creation time"
-        - "Added confirmedPaymentDate to creation form"
-        - "Added 'Situación' column (Vencida/A tiempo) to invoice list"
-
-    companies:
-      added_fields:
-        - field: "has_portal"
-          type: "BOOLEAN DEFAULT false"
-          notes: "Whether company uses payment portal"
-      removed_fields:
-        - field: "email"
-          reason: "Email belongs to contacts, not companies"
-        - field: "payment_terms_days"
-          reason: "Moved to invoices table for per-invoice flexibility"
-      ui_changes:
-        - "Removed email field from company form"
-        - "Removed paymentTermsDays field from company form"
-        - "Added hasPortal toggle checkbox"
-        - "Fixed invoice_count bug (was hardcoded to 0)"
-
-    contacts:
-      investigation:
-        - issue: "Badges for Primary/Escalation contacts never appear"
-        - finding: "Code exists correctly, likely data issue (values stored as false)"
-        - status: "Requires production data verification"
-
-  stories_completed:
-    - id: "Story 0"
-      title: "Investigar Bug Badges Contactos"
-      status: "done (code OK, needs data verification)"
-
-    - id: "Story A"
-      title: "Migración de Schema"
-      status: "done"
-      files_modified:
-        - "prisma/schema.prisma"
-        - "src/lib/validations/company-schema.ts"
-        - "src/lib/validations/invoice-schema.ts"
-        - "src/lib/services/company-service.ts"
-        - "src/lib/services/invoice-service.ts"
-
-    - id: "Story B"
-      title: "UI de Facturas"
-      status: "done"
-      files_modified:
-        - "src/components/forms/invoice-form.tsx"
-        - "src/app/(dashboard)/invoices/page.tsx"
-
-    - id: "Story C"
-      title: "UI de Empresas + Fix Bugs"
-      status: "done"
-      files_modified:
-        - "src/components/forms/company-form.tsx"
-        - "src/app/(dashboard)/companies/[companyId]/edit/page.tsx"
-
-    - id: "Story D"
-      title: "Actualizar Documentación"
-      status: "done"
-      files_modified:
-        - "docs/sprint-artifacts/sprint-status.yaml"
-
-  sql_migration:
-    file: "prisma/migrations/manual-refinamiento-schema.sql"
-    status: "pending - must be run manually in Supabase"
-    commands: |
-      -- Run in Supabase SQL Editor:
-      ALTER TABLE companies ADD COLUMN IF NOT EXISTS has_portal BOOLEAN DEFAULT false;
-      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS payment_terms_days INTEGER DEFAULT 30;
-      ALTER TABLE invoices ADD COLUMN IF NOT EXISTS projected_payment_date DATE;
-      ALTER TABLE companies DROP COLUMN IF EXISTS email;
-      ALTER TABLE companies DROP COLUMN IF EXISTS payment_terms_days;
-
-  next_step: "Continue with Story 3.4 (Schema de Collections)"
-
-# ============================================================
-# EPIC 3 DETAILED SPRINT PLANNING
-# ============================================================
-# Generated: 2025-12-03
-# Party Mode Session: Completed with PM, Architect, SM, TEA
-# Status: Ready for Phase 4 (Development)
-# Total Stories: 7
-
-epic_3_detailed_plan:
-  epic_id: "epic-3"
-  epic_name: "Motor de Cobranzas Automatizado"
-  phase: "Phase 4 - Implementation IN PROGRESS"
-  status: "in-progress"
-  total_stories: 8  # includes bonus Story 3.4.1
-  completed_stories: 8
-  next_story: null
-  next_story_status: null
-
-  # ============================================================
-  # PARTY MODE DECISIONS (2025-12-03)
-  # ============================================================
-  party_mode_decisions:
-    gap_c1_messaging:
-      problem: "Story 3.6 requires sendEmail/sendWhatsApp but not in Epic 3"
-      resolution: "IMessageService interface + MockMessageService in Epic 3"
-      implementation: "Real SendGridService + TwilioService in Epic 4"
-      owner: "Winston (Architect)"
-
-    gap_c2_state_machine:
-      problem: "Collection state transitions not documented"
-      resolution: "Full state machine with 6 states and 11 allowed transitions"
-      states: ["active", "paused", "awaiting_response", "pending_review", "completed", "escalated"]
-      terminal_state: "completed"
-      owner: "Bob (SM)"
-
-    gap_c3_rate_limiting:
-      problem: "Rate limit scope was ambiguous"
-      resolution: |
-        - maxActiveCollectionsPerTenant: 5 (per tenant)
-        - minHoursBetweenMessagesToSameContact: 4 (per contact)
-        - maxMessagesPerDayPerTenant: 10 (per tenant)
-      owner: "Winston (Architect)"
-
-    risk_r001_race_condition:
-      problem: "Worker race condition could cause duplicate messages"
-      severity: 9
-      resolution: "Upstash Redis distributed lock with 45 second TTL"
-      owner: "Murat (TEA)"
-
-  # ============================================================
-  # CRITICAL STORY SEQUENCE
-  # ============================================================
-  # Stories MUST be executed in this order to respect dependencies
-
-  story_sequence:
-    schema_layer:
-      # MUST execute first - creates Playbook and PlaybookMessage tables
-      - "3.1"
-      # Creates Collection table (can run parallel with 3.1)
-      - "3.4"
-
-    builder_layer:
-      # Depends on 3.1 (Playbook schema must exist)
-      - "3.2"
-
-    seed_layer:
-      # Depends on 3.2 (builder patterns useful for seed)
-      - "3.3"
-
-    collection_flow:
-      # Depends on 3.4 (Collection schema) + 3.3 (default playbooks)
-      - "3.5"
-
-    automation_layer:
-      # Depends on 3.5 (collections must exist to process)
-      # CRITICAL: Requires Upstash Redis setup BEFORE implementation
-      - "3.6"
-
-    control_layer:
-      # Depends on 3.5 (collections exist) + 3.6 (worker context)
-      - "3.7"
-
-  # ============================================================
-  # STORY DETAILS
-  # ============================================================
-
-  stories:
-    - id: "3.1"
-      title: "Schema de Playbooks y Mensajes"
-      status: "done"
-      priority: "critical"
-      dependencies: ["epic-2-complete"]
-      blocks: ["3.2", "3.3"]
-      estimated_points: 3
-      acceptance_criteria_count: 4
-      completed_date: "2025-12-03"
-      notes: "COMPLETED - Prisma schema + RLS policies + partial unique index + integration tests"
-
-    - id: "3.2"
-      title: "Builder de Playbooks"
-      status: "done"
-      priority: "high"
-      dependencies: ["3.1"]
-      blocks: ["3.3"]
-      estimated_points: 8
-      acceptance_criteria_count: 6
-      completed_date: "2025-12-03"
-      notes: "COMPLETED - Complex UI with @dnd-kit drag & drop"
-
-    - id: "3.3"
-      title: "Playbooks Pre-configurados (Seed)"
-      status: "done"
-      priority: "medium"
-      dependencies: ["3.2"]
-      blocks: ["3.5"]
-      estimated_points: 3
-      acceptance_criteria_count: 3
-      completed_date: "2025-12-03"
-      notes: "COMPLETED - 3 default playbooks in Spanish, integrated with tenant provisioning"
-
-    - id: "3.4"
-      title: "Schema de Collections"
-      status: "done"
-      priority: "critical"
-      dependencies: ["epic-2-complete"]
-      blocks: ["3.5", "3.6", "3.7"]
-      estimated_points: 3
-      acceptance_criteria_count: 4
-      validated_date: "2025-12-04"
-      completed_date: "2025-12-04"
-      notes: "COMPLETED 2025-12-04 - Code review passed. Story file: docs/sprint-artifacts/3-4-schema-de-collections.md"
-
-    - id: "3.5"
-      title: "Activar Playbook en Factura"
-      status: "ready-for-dev"
-      priority: "high"
-      dependencies: ["3.3", "3.4"]
-      blocks: ["3.6", "3.7"]
-      estimated_points: 5
-      acceptance_criteria_count: 8
-      story_file: "docs/sprint-artifacts/3-5-activar-playbook-en-factura.md"
-      notes: "UI factura-céntrica - Modal para activar playbook desde detalle de factura"
-
-    - id: "3.6"
-      title: "Worker de Procesamiento Automático"
-      status: "done"
-      priority: "critical"
-      dependencies: ["3.5"]
-      blocks: ["3.7"]
-      estimated_points: 8
-      acceptance_criteria_count: 11
-      completed_date: "2025-12-04"
-      notes: "COMPLETED 2025-12-04 - Upstash Redis lock, rate limiting, MockMessageService, comprehensive tests"
-      story_file: "docs/sprint-artifacts/3-6-worker-de-procesamiento-automatico.md"
-      code_review: "completed"
-
-    - id: "3.7"
-      title: "Control Manual de Playbook Activo"
-      status: "done"
-      priority: "high"
-      dependencies: ["3.5"]
-      blocks: []
-      estimated_points: 5
-      acceptance_criteria_count: 5
-      completed_date: "2025-12-05"
-      notes: "COMPLETED 2025-12-05 - Pause/Resume/Complete controls, Communications Timeline, State Machine"
-      story_file: "docs/sprint-artifacts/3-7-control-manual-de-playbook-activo.md"
-
-  # ============================================================
-  # TECHNICAL PREREQUISITES
-  # ============================================================
-
-  technical_prerequisites:
-    npm_packages:
-      - package: "@dnd-kit/core"
-        version: "^6.0.0"
-        story: "3.2"
-      - package: "@dnd-kit/sortable"
-        version: "^7.0.0"
-        story: "3.2"
-      - package: "@upstash/redis"
-        version: "^1.28.0"
-        story: "3.6"
-
-    environment_variables:
-      - name: "UPSTASH_REDIS_REST_URL"
-        story: "3.6"
-        required: true
-      - name: "UPSTASH_REDIS_REST_TOKEN"
-        story: "3.6"
-        required: true
-
-    vercel_config:
-      - type: "cron"
-        path: "/api/cron/collection-worker"
-        schedule: "*/5 * * * *"
-        story: "3.6"
-
-  # ============================================================
-  # RISK MITIGATION
-  # ============================================================
-
-  risk_mitigation:
-    - risk: "R-001: Worker race condition causes duplicate messages"
-      severity: "critical"
-      mitigation: "Upstash Redis distributed lock with TTL 45s"
-      status: "designed"
-      owner: "Murat (TEA)"
-
-    - risk: "R-002: RLS misconfiguration on new tables"
-      severity: "high"
-      mitigation: "Pre-deploy RLS validation script"
-      status: "pending"
-      owner: "Winston (Architect)"
-
-    - risk: "Drag & drop complexity in Playbook Builder"
-      severity: "medium"
-      mitigation: "Use proven @dnd-kit library, follow existing patterns"
-      status: "planned"
-
-    - risk: "Template variable replacement errors"
-      severity: "low"
-      mitigation: "Graceful handling - undefined vars replaced with empty string"
-      status: "designed"
-
-  # ============================================================
-  # EXECUTION PLAN
-  # ============================================================
-
-  execution_plan:
-    current_phase: "Phase 4 - Development COMPLETE"
-    last_completed_story: "3.7"
-    current_story: null
-    current_story_status: null
-    next_story: null
-    next_story_status: null
-
-    # 2025-12-04: Story 3.4 COMPLETED - Code review passed ✅
-    # 2025-12-04: Story 3.4.1 COMPLETED - UI Consistency (bonus story)
-    # 2025-12-04: Story 3.5 COMPLETED - Activar Playbook en Factura ✅
-    # 2025-12-04: Story 3.6 COMPLETED - Worker de Procesamiento Automático ✅
-    # Próximo paso: Draft Story 3.7 con *create-story
-
-    recommended_workflow:
-      - step: 1
-        action: "COMPLETED - Stories 3.1, 3.2, 3.3 done"
-        status: "done"
-        completed_date: "2025-12-03"
-        deliverables: ["Playbook schema", "Playbook Builder UI", "3 default playbooks"]
-
-      - step: 2
-        action: "COMPLETED - Story 3.4 (Collection Schema) DONE ✅"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["Prisma migration", "RLS policies", "Conditional UNIQUE index", "Tests"]
-        story_file: "docs/sprint-artifacts/3-4-schema-de-collections.md"
-        code_review: "completed"
-
-      - step: 3
-        action: "COMPLETED - Story 3.5 (Activar Playbook en Factura) drafted & validated"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["Story file drafted", "Validation report", "9 improvements applied"]
-        story_file: "docs/sprint-artifacts/3-5-activar-playbook-en-factura.md"
-        validation_report: "docs/sprint-artifacts/validation-report-3-5-2025-12-04.md"
-
-      - step: 3.5
-        action: "COMPLETED - Story 3.5 (Activar Playbook en Factura) implemented"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["collection-service.ts", "API endpoint", "Modal UI", "Badge component", "Tests"]
-
-      - step: 4
-        action: "COMPLETED - Code review Story 3.5 passed"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["Review feedback", "Fixes applied"]
-
-      - step: 5
-        action: "COMPLETED - Upstash Redis account configured"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["Upstash account", "Redis database created", "Env vars in Vercel"]
-
-      - step: 6
-        action: "COMPLETED - Story 3.6 (Worker de Procesamiento Automático) ✅"
-        status: "done"
-        completed_date: "2025-12-04"
-        deliverables: ["Cron job", "Rate limiting", "MockMessageService", "Redis lock", "Comprehensive tests"]
-        story_file: "docs/sprint-artifacts/3-6-worker-de-procesamiento-automatico.md"
-        code_review: "completed"
-
-      - step: 7
-        action: "COMPLETED - Story 3.7 (Control Manual de Playbook Activo)"
-        status: "done"
-        completed_date: "2025-12-05"
-        deliverables: ["Pause/Resume/Complete UI in invoice", "Communications timeline", "State machine", "API endpoints"]
-
-      - step: 8
-        action: "Execute Epic 3 retrospective"
-        status: "pending"
-        estimated_time: "1 hour"
-        deliverables: ["Lessons learned", "Process improvements"]
-        notes: "All stories complete - Epic 3 ready for retrospective"
-
-  # ============================================================
-  # PHASE 4 APPROVAL
-  # ============================================================
-
-  phase_4_approval:
-    approved: true
-    approved_by: "Scrum Master (Bob) - Party Mode Session"
-    approved_date: "2025-12-03"
-    implementation_readiness_review: "2025-12-04 - APPROVED"
-
-    approval_notes: |
-      Epic 3 is IN PROGRESS - Development Phase 4.
-
-      COMPLETED:
-      - Story 3.1: Schema de Playbooks y Mensajes ✅ (2025-12-03)
-      - Story 3.2: Builder de Playbooks ✅ (2025-12-03)
-      - Story 3.3: Playbooks Pre-configurados ✅ (2025-12-03)
-      - Story 3.4: Schema de Collections ✅ (2025-12-04) - Code review PASSED
-
-      NEXT STEPS:
-      1. Draft Story 3.7 (Control Manual de Playbook Activo) with *create-story
-      2. Implement Story 3.7
-      3. Code review Story 3.7
-      4. Execute Epic 3 retrospective
-
-    next_steps:
-      - "Create Story 3.7 draft with *create-story (Control Manual de Playbook Activo)"
-      - "Implement Story 3.7 (Pause/Resume/Complete controls in invoice view)"
-      - "Code review Story 3.7"
-      - "Execute Epic 3 retrospective when complete"
+# ===========================================
+# CLERK - MOCK USER FOR PRODUCTION TESTING (PLAYWRIGHT)
+# TEST EMAIL: your_email+clerk_test@example.com
+# VERIFICATION CODE: 424242
+# TEST PHONE NUMBER: +15555550100
+# ===========================================
