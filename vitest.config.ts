@@ -8,8 +8,9 @@ dotenv.config();
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
-    include: ['**/*.test.ts'],
+    environment: 'jsdom',
+    setupFiles: ['./__tests__/setup.ts'],
+    include: ['**/*.test.ts', '**/*.test.tsx'],
     exclude: ['node_modules', '.next', 'dist'],
     coverage: {
       provider: 'v8',

@@ -22,7 +22,9 @@ import { ActivatePlaybookButton } from '@/components/invoices/activate-playbook-
 import { PlaybookControls } from '@/components/invoices/playbook-controls';
 import { InvoiceStatusHistory } from '@/components/invoices/invoice-status-history';
 import { CommunicationsTimeline } from '@/components/invoices/communications-timeline';
+import { MessageTimeline } from '@/components/collections/message-timeline';
 import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
+import type { CollectionMessage } from '@/lib/services/message-service';
 
 interface ActiveCollection {
   id: string;
@@ -72,6 +74,7 @@ export default function InvoiceDetailPage() {
 
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
+  const [messages, setMessages] = useState<CollectionMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -106,6 +109,18 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const fetchMessages = async (collectionId: string) => {
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/messages`);
+      if (res.ok) {
+        const data = await res.json();
+        setMessages(data);
+      }
+    } catch (err) {
+      console.error('Error fetching messages:', err);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -125,6 +140,13 @@ export default function InvoiceDetailPage() {
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
   }, [invoiceId]);
+
+  // Fetch messages when invoice has activeCollection
+  useEffect(() => {
+    if (invoice?.activeCollection?.id) {
+      fetchMessages(invoice.activeCollection.id);
+    }
+  }, [invoice?.activeCollection?.id]);
 
   if (isLoading) {
     return (
@@ -306,10 +328,13 @@ export default function InvoiceDetailPage() {
         {/* Sidebar */}
         <div className="lg:col-span-1">
           <Tabs defaultValue="history" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="history">Historial</TabsTrigger>
               <TabsTrigger value="communications" disabled={!invoice.activeCollection}>
                 Comunicaciones
+              </TabsTrigger>
+              <TabsTrigger value="messages" disabled={!invoice.activeCollection}>
+                Mensajes
               </TabsTrigger>
             </TabsList>
             <TabsContent value="history" className="mt-4">
@@ -322,6 +347,18 @@ export default function InvoiceDetailPage() {
               {invoice.activeCollection && (
                 <CommunicationsTimeline collectionId={invoice.activeCollection.id} />
               )}
+            </TabsContent>
+            <TabsContent value="messages" className="mt-4">
+              <div className="bg-white rounded-lg border p-6">
+                <h2 className="text-lg font-semibold mb-4">Mensajes Enviados</h2>
+                {invoice.activeCollection ? (
+                  <MessageTimeline messages={messages} />
+                ) : (
+                  <p className="text-center text-muted-foreground py-4">
+                    No hay mensajes enviados
+                  </p>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
