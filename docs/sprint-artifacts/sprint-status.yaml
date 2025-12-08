@@ -82,7 +82,7 @@ development_status:
   4-1-envio-de-emails-transaccionales: done
   4-2-historial-de-mensajes-enviados: done
   4-3-webhooks-de-delivery-status: done
-  epic-4-retrospective: optional
+  epic-4-retrospective: done
 
   # ============================================================
   # Epic 5: Loop de Respuestas e IA
