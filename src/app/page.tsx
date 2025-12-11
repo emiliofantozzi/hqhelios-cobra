@@ -178,8 +178,8 @@ export default async function HomePage() {
           <div className="container mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-4">
               {[
-                { value: '500+', label: 'Empresas activas' },
-                { value: '$10M+', label: 'Cobrado con exito' },
+                { value: '50+', label: 'Empresas activas' },
+                { value: '$2M+', label: 'Cobrado con exito' },
                 { value: '24/7', label: 'Automatizacion continua' },
               ].map((stat, index) => (
                 <div

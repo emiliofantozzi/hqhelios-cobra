@@ -37,7 +37,11 @@ workflow_status:
   create-epics-and-stories: "docs/epics/index.md"
   test-design: "docs/test-design-system.md"
   validate-architecture: optional
-  implementation-readiness: "docs/implementation-readiness-report.md"
+  implementation-readiness: "docs/implementation-readiness-report-2025-12-04.md"
 
   # Phase 3: Implementation
   sprint-planning: "docs/sprint-artifacts/sprint-status.yaml"
+  epic-4-readiness: "docs/sprint-artifacts/epic-4-implementation-readiness.md"
+
+  # Phase 4: Execution
+  create-story: "docs/sprint-artifacts/4-2-historial-de-mensajes-enviados.md"

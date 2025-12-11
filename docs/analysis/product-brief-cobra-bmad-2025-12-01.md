@@ -542,7 +542,7 @@ Estas métricas se rastrean pero no son criterio de validación del MVP inicial:
 10. ✅ Notificaciones (facturas pagadas, respuestas pendientes)
 
 **Arquitectura Técnica:**
-- ✅ Multi-tenant con Supabase + RLS
+- ✅ Multi-tenant con RLS
 - ✅ Autenticación con Clerk
 - ✅ Integración N8N para webhooks
 - ✅ Modelo de datos completo (10 entidades)
@@ -553,7 +553,6 @@ Estas métricas se rastrean pero no son criterio de validación del MVP inicial:
 **Fuera de Scope Inicial:**
 - ❌ Generación de contenido con IA (usar templates simples primero)
 - ❌ Integración directa con ERPs (carga manual CSV es suficiente)
-- ❌ Cobranzas agrupadas (1 mensaje → múltiples facturas)
 - ❌ Escalamiento automático (solo manual)
 - ❌ Roles diferenciados de usuarios (todos admin en MVP)
 - ❌ Analytics avanzado (solo dashboard operativo básico)

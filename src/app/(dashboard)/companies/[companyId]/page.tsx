@@ -24,6 +24,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { ContactsList } from '@/components/contacts/contacts-list';
+import { InvoicesTable, type InvoiceRow } from '@/components/tables/invoices-table';
 import { Download } from 'lucide-react';
 import { exportContactsToCSV } from '@/lib/exports/export-contacts';
 
@@ -43,11 +44,9 @@ interface Company {
   id: string;
   name: string;
   tax_id: string;
-  email: string | null;
   phone: string | null;
   address: string | null;
   industry: string | null;
-  payment_terms_days: number;
   risk_level: string;
   is_active: boolean;
   created_at: string;
@@ -64,6 +63,7 @@ export default function CompanyDetailPage() {
 
   const [company, setCompany] = useState<Company | null>(null);
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showInactiveContacts, setShowInactiveContacts] = useState(false);
@@ -81,6 +81,40 @@ export default function CompanyDetailPage() {
     }
   };
 
+  const fetchInvoices = async () => {
+    try {
+      const res = await fetch(`/api/invoices?companyId=${companyId}`);
+      if (res.ok) {
+        const data = await res.json();
+        // Transformar a InvoiceRow para la tabla
+        const rows: InvoiceRow[] = data.map((inv: {
+          id: string;
+          invoice_number: string;
+          amount: number;
+          currency: string;
+          issue_date: string;
+          due_date: string;
+          payment_status: string;
+          company_id: string;
+          companies?: { name: string };
+        }) => ({
+          id: inv.id,
+          invoice_number: inv.invoice_number,
+          amount: Number(inv.amount),
+          currency: inv.currency,
+          issue_date: inv.issue_date,
+          due_date: inv.due_date,
+          payment_status: inv.payment_status,
+          company_id: inv.company_id,
+          company_name: inv.companies?.name || '',
+        }));
+        setInvoices(rows);
+      }
+    } catch (err) {
+      console.error('Error fetching invoices:', err);
+    }
+  };
+
   useEffect(() => {
     async function fetchCompany() {
       try {
@@ -95,8 +129,9 @@ export default function CompanyDetailPage() {
         }
         const data = await res.json();
         setCompany(data);
-        // Fetch contacts after company loads
+        // Fetch contacts and invoices after company loads
         fetchContacts();
+        fetchInvoices();
       } catch (err) {
         console.error('Error fetching company:', err);
         setError('Error de conexión');
@@ -225,10 +260,6 @@ export default function CompanyDetailPage() {
         <TabsContent value="info" className="bg-white rounded-lg border p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="text-sm font-medium text-gray-500">Email</label>
-              <p className="mt-1">{company.email || '-'}</p>
-            </div>
-            <div>
               <label className="text-sm font-medium text-gray-500">Teléfono</label>
               <p className="mt-1">{company.phone || '-'}</p>
             </div>
@@ -239,10 +270,6 @@ export default function CompanyDetailPage() {
             <div>
               <label className="text-sm font-medium text-gray-500">Industria</label>
               <p className="mt-1">{company.industry || '-'}</p>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-gray-500">Días de Crédito</label>
-              <p className="mt-1">{company.payment_terms_days} días</p>
             </div>
             <div>
               <label className="text-sm font-medium text-gray-500">Nivel de Riesgo</label>
@@ -296,10 +323,13 @@ export default function CompanyDetailPage() {
           />
         </TabsContent>
 
-        <TabsContent value="invoices" className="bg-white rounded-lg border p-6">
-          <p className="text-gray-500 text-center py-8">
-            Las facturas se implementarán en Story 2.5
-          </p>
+        <TabsContent value="invoices" className="space-y-4">
+          <div className="flex items-center justify-end bg-white rounded-lg border p-4">
+            <Link href={`/invoices/new?companyId=${companyId}`}>
+              <Button>Nueva Factura</Button>
+            </Link>
+          </div>
+          <InvoicesTable data={invoices} hideCompanyColumn />
         </TabsContent>
       </Tabs>
     </div>

@@ -40,13 +40,13 @@ Mientras ERPs solo registran facturas y CRMs gestionan relaciones comerciales, c
 - **Supervisión Humana:** Siempre en decisiones críticas
 - **Ventaja:** Confiabilidad de sistemas rule-based + inteligencia de IA
 
-**3. Modelo de Cobranza Individual (Simplicidad del MVP)**
+**3. Modelo de Cobranza Factura-Céntrico (Simplicidad del MVP)**
 
-A diferencia de sistemas complejos, cobra-bmad arranca con **1 Cobranza = 1 Factura = 1 Flujo**:
-- ⚡ Implementación rápida (8 semanas a MVP funcional)
-- 🛡️ Menor riesgo técnico (flujos lineales, fácil de debuggear)
-- ✅ Validación temprana de modelo de negocio
-- 📈 Base sólida para evolucionar a cobranzas agrupadas después
+A diferencia de sistemas complejos, cobra-bmad gestiona cobranzas **directamente desde la factura**:
+- ⚡ Sin entidades adicionales - la factura ES el centro de la cobranza
+- 🛡️ Historial de comunicaciones integrado en cada factura (mensajes in/out)
+- ✅ Playbooks opcionales para automatizar la cadencia de mensajes
+- 📈 Bandeja de comunicaciones por factura - todo el contexto en un solo lugar
 
 **4. Arquitectura Multi-Tenant con Seguridad Enterprise**
 
@@ -60,7 +60,7 @@ A diferencia de sistemas complejos, cobra-bmad arranca con **1 Cobranza = 1 Fact
 CFOs y Gerentes de Cobranzas ven en tiempo real:
 - Facturas por estado (pendientes, vencidas, cobradas)
 - Días promedio de cobro (DSO) y tendencias
-- Cobranzas activas vs cerradas
+- Facturas con playbook activo vs cerradas
 - Mensajes enviados y tasa de respuesta
 - Bandeja de excepciones que requieren atención
 
@@ -110,7 +110,7 @@ El proyecto califica como **SaaS B2B de alta complejidad** por las siguientes ra
 
 **Operacionales:**
 - Facturas por estado (Pendientes, Vencidas, Pagadas, Escaladas)
-- Cobranzas activas vs completadas
+- Facturas en gestión activa vs completadas
 - Mensajes enviados automáticamente por día
 - Tasa de respuesta de clientes (% que responden)
 
@@ -444,18 +444,19 @@ Carlos entra semanalmente para ver dashboard: facturas pendientes/vencidas/cobra
 
 **Dependencias:** Historia 3.1.1 y Historia 2.3.1 (requiere playbooks e invoices)
 
-**Historia 3.2.2: Como Miguel, necesito crear una cobranza para una factura**
+**Historia 3.2.2: Como Miguel, necesito activar un playbook en una factura para automatizar el seguimiento**
 
-**Contexto Técnico:** Crear Collection activa el workflow de cobranza automática.
+**Contexto Técnico:** Activar playbook crea un registro interno de estado (InvoicePlaybookState/Collection) que el motor procesa automáticamente.
 
 **Acceptance Criteria:**
-- [ ] UI: Botón "Iniciar Cobranza" en vista de factura
-- [ ] UI: Modal para seleccionar playbook y confirmar contacto primary
-- [ ] Validación: Solo facturas con payment_status = pendiente o fecha_confirmada pueden tener cobranza
-- [ ] Validación: No crear cobranza si ya existe una activa para esa factura
+- [ ] UI: Botón "Activar Playbook" en vista de detalle de factura
+- [ ] UI: Selector de playbook disponible + confirmación de contacto primary
+- [ ] Al activar: La factura muestra badge "Playbook Activo: [nombre]"
+- [ ] Validación: Solo facturas con payment_status = pendiente o fecha_confirmada
+- [ ] Validación: No activar si ya existe un playbook activo para esa factura
 - [ ] Al crear: status = 'active', current_message_index = 0, started_at = now
 - [ ] Calcular next_action_at según playbook (inmediato para mensaje 0)
-- [ ] Testing: Collection creada correctamente con referencias a invoice, company, contact, playbook
+- [ ] Testing: Registro interno creado correctamente con referencias a invoice, company, contact, playbook
 
 **Dependencias:** Historia 3.2.1
 
@@ -482,17 +483,18 @@ Carlos entra semanalmente para ver dashboard: facturas pendientes/vencidas/cobra
 
 **Dependencias:** Historia 3.2.2 + Historia 3.3.1 (requiere envío de mensajes)
 
-**Historia 3.2.4: Como Miguel, necesito pausar/reanudar/completar cobranzas manualmente**
+**Historia 3.2.4: Como Miguel, necesito pausar/reanudar/completar el playbook activo de una factura**
 
-**Contexto Técnico:** Control manual para casos excepcionales.
+**Contexto Técnico:** Controles manuales en la vista de detalle de factura para casos excepcionales.
 
 **Acceptance Criteria:**
-- [ ] UI: Botones en vista de collection: "Pausar", "Reanudar", "Completar"
-- [ ] Al pausar: status = 'paused', no procesar en worker
+- [ ] UI: Controles en sección "Playbook Activo" dentro de la factura: "Pausar", "Reanudar", "Completar"
+- [ ] Al pausar: status = 'paused', badge cambia a "Playbook Pausado", no procesar en worker
 - [ ] Al reanudar: status = 'active', next_action_at = now (enviar siguiente mensaje inmediatamente)
-- [ ] Al completar: status = 'completed', completed_at = now
-- [ ] Testing: Collection pausada no envía mensajes
-- [ ] Testing: Collection reanudada envía siguiente mensaje correctamente
+- [ ] Al completar: status = 'completed', completed_at = now, badge desaparece
+- [ ] Historial de comunicaciones se mantiene visible aunque playbook esté completado
+- [ ] Testing: Playbook pausado no envía mensajes
+- [ ] Testing: Playbook reanudado envía siguiente mensaje correctamente
 
 **Dependencias:** Historia 3.2.3
 
@@ -530,17 +532,19 @@ Carlos entra semanalmente para ver dashboard: facturas pendientes/vencidas/cobra
 
 **Dependencias:** Historia 3.3.1 (mismo patrón de envío)
 
-**Historia 3.3.3: Como Miguel, necesito ver el historial completo de mensajes enviados por cobranza**
+**Historia 3.3.3: Como Miguel, necesito ver la bandeja de comunicaciones de una factura**
 
-**Contexto Técnico:** Trazabilidad - ver qué se envió, cuándo, y estado de entrega.
+**Contexto Técnico:** Trazabilidad - ver qué se envió Y recibió, cuándo, y estado de entrega. Todo en la vista de factura.
 
 **Acceptance Criteria:**
-- [ ] UI: Vista de detalle de collection con tab "Historial de Mensajes"
-- [ ] UI: Timeline de mensajes enviados (ordenados por fecha)
+- [ ] UI: Tab "Comunicaciones" en vista de detalle de factura
+- [ ] UI: Timeline unificado de mensajes enviados (📤) Y respuestas recibidas (📥)
+- [ ] Ordenado cronológicamente (más reciente arriba o abajo - configurable)
 - [ ] Mostrar: Fecha/hora, canal, subject (si email), preview de body, estado de entrega
-- [ ] Iconos: ✅ Entregado, ⏳ Pendiente, ❌ Rebotado
-- [ ] Click en mensaje: Ver contenido completo en modal
-- [ ] Testing: Historial muestra todos los mensajes de la collection
+- [ ] Iconos: ✅ Entregado, ⏳ Pendiente, ❌ Rebotado, 📥 Respuesta recibida
+- [ ] Click en mensaje: Ver contenido completo en modal/expansión
+- [ ] Las respuestas del cliente aparecen integradas en el mismo timeline
+- [ ] Testing: Bandeja muestra todos los mensajes enviados y recibidos de la factura
 
 **Dependencias:** Historia 3.3.1, 3.3.2
 

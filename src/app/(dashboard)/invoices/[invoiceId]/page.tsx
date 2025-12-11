@@ -23,8 +23,10 @@ import { PlaybookControls } from '@/components/invoices/playbook-controls';
 import { InvoiceStatusHistory } from '@/components/invoices/invoice-status-history';
 import { CommunicationsTimeline } from '@/components/invoices/communications-timeline';
 import { MessageTimeline } from '@/components/collections/message-timeline';
+import { PlaybookScheduleTimeline } from '@/components/collections/playbook-schedule-timeline';
 import type { InvoiceStatus } from '@/lib/constants/invoice-status-transitions';
 import type { CollectionMessage } from '@/lib/services/message-service';
+import type { CollectionSchedule } from '@/lib/services/collection-schedule-service';
 
 interface ActiveCollection {
   id: string;
@@ -75,6 +77,7 @@ export default function InvoiceDetailPage() {
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [history, setHistory] = useState<StatusHistoryEntry[]>([]);
   const [messages, setMessages] = useState<CollectionMessage[]>([]);
+  const [schedule, setSchedule] = useState<CollectionSchedule | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -121,6 +124,18 @@ export default function InvoiceDetailPage() {
     }
   };
 
+  const fetchSchedule = async (collectionId: string) => {
+    try {
+      const res = await fetch(`/api/collections/${collectionId}/schedule`);
+      if (res.ok) {
+        const data = await res.json();
+        setSchedule(data);
+      }
+    } catch (err) {
+      console.error('Error fetching schedule:', err);
+    }
+  };
+
   useEffect(() => {
     async function loadData() {
       setIsLoading(true);
@@ -141,10 +156,11 @@ export default function InvoiceDetailPage() {
     return () => window.removeEventListener('focus', handleFocus);
   }, [invoiceId]);
 
-  // Fetch messages when invoice has activeCollection
+  // Fetch messages and schedule when invoice has activeCollection
   useEffect(() => {
     if (invoice?.activeCollection?.id) {
       fetchMessages(invoice.activeCollection.id);
+      fetchSchedule(invoice.activeCollection.id);
     }
   }, [invoice?.activeCollection?.id]);
 
@@ -349,16 +365,15 @@ export default function InvoiceDetailPage() {
               )}
             </TabsContent>
             <TabsContent value="messages" className="mt-4">
-              <div className="bg-white rounded-lg border p-6">
-                <h2 className="text-lg font-semibold mb-4">Mensajes Enviados</h2>
-                {invoice.activeCollection ? (
-                  <MessageTimeline messages={messages} />
-                ) : (
+              {invoice.activeCollection && schedule ? (
+                <PlaybookScheduleTimeline schedule={schedule} />
+              ) : (
+                <div className="bg-white rounded-lg border p-6">
                   <p className="text-center text-muted-foreground py-4">
-                    No hay mensajes enviados
+                    No hay playbook activo
                   </p>
-                )}
-              </div>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>

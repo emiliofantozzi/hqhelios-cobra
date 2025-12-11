@@ -612,3 +612,143 @@ export async function getCollectionTimeline(
   // Ordenar DESC (más reciente primero)
   return events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 }
+
+/**
+ * Item de lista de collections
+ * Story 4.5: Visibilidad de Mensajes Programados
+ */
+export interface CollectionListItem {
+  id: string;
+  status: string;
+  startedAt: string;
+  nextActionAt: string | null;
+  messagesSentCount: number;
+  currentMessageIndex: number;
+  totalMessages: number;
+  invoice: {
+    id: string;
+    invoiceNumber: string;
+    amount: number;
+    currency: string;
+    dueDate: string;
+  };
+  company: {
+    id: string;
+    name: string;
+  };
+  playbook: {
+    id: string;
+    name: string;
+  };
+}
+
+/**
+ * Filtros para listado de collections
+ */
+interface ListCollectionsFilters {
+  status?: string;
+  companyId?: string;
+}
+
+/**
+ * Lista todas las collections del tenant con filtros opcionales
+ * Story 4.5: Visibilidad de Mensajes Programados
+ *
+ * @param tenantId - ID del tenant
+ * @param filters - Filtros opcionales (status, companyId)
+ * @returns Lista de collections con datos relacionados
+ */
+export async function listCollections(
+  tenantId: string,
+  filters?: ListCollectionsFilters
+): Promise<CollectionListItem[]> {
+  const supabase = await getSupabaseClient(tenantId);
+
+  let query = supabase
+    .from('collections')
+    .select(`
+      id,
+      status,
+      started_at,
+      next_action_at,
+      messages_sent_count,
+      current_message_index,
+      invoices:invoice_id (
+        id,
+        invoice_number,
+        amount,
+        currency,
+        due_date
+      ),
+      companies:company_id (
+        id,
+        name
+      ),
+      playbooks:playbook_id (
+        id,
+        name,
+        playbook_messages (count)
+      )
+    `)
+    .eq('tenant_id', tenantId)
+    .order('next_action_at', { ascending: true, nullsFirst: false });
+
+  // Aplicar filtros
+  if (filters?.status && filters.status !== 'all') {
+    query = query.eq('status', filters.status);
+  }
+  if (filters?.companyId) {
+    query = query.eq('company_id', filters.companyId);
+  }
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error('Error listing collections:', error);
+    return [];
+  }
+
+  return (data || []).map((collection) => {
+    const invoiceData = collection.invoices as unknown as {
+      id: string;
+      invoice_number: string;
+      amount: number;
+      currency: string;
+      due_date: string;
+    };
+    const companyData = collection.companies as unknown as {
+      id: string;
+      name: string;
+    };
+    const playbookData = collection.playbooks as unknown as {
+      id: string;
+      name: string;
+      playbook_messages: Array<{ count: number }>;
+    };
+
+    return {
+      id: collection.id,
+      status: collection.status,
+      startedAt: collection.started_at,
+      nextActionAt: collection.next_action_at,
+      messagesSentCount: collection.messages_sent_count,
+      currentMessageIndex: collection.current_message_index,
+      totalMessages: playbookData.playbook_messages?.[0]?.count || 0,
+      invoice: {
+        id: invoiceData.id,
+        invoiceNumber: invoiceData.invoice_number,
+        amount: invoiceData.amount,
+        currency: invoiceData.currency,
+        dueDate: invoiceData.due_date,
+      },
+      company: {
+        id: companyData.id,
+        name: companyData.name,
+      },
+      playbook: {
+        id: playbookData.id,
+        name: playbookData.name,
+      },
+    };
+  });
+}

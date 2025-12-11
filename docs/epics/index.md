@@ -11,7 +11,7 @@
 Este directorio contiene el desglose completo de épicas e historias de usuario para cobra-bmad, derivado del PRD e incorporando el contexto técnico de Architecture.md y los patrones de UX de ux-design.md.
 
 **Total de Épicas:** 6
-**Total de Stories:** 35
+**Total de Stories:** 36
 **Cobertura de FRs:** 100% (38 FRs del PRD)
 
 ✅ **Estado:** COMPLETO - Listo para Sprint Planning
@@ -23,7 +23,7 @@ Este directorio contiene el desglose completo de épicas e historias de usuario 
 | Archivo | Épica | Stories | FRs | Estado |
 |---------|-------|---------|-----|--------|
 | [epic-1-foundation.md](./epic-1-foundation.md) | Foundation Setup | 4 | FR1-4 | 🔜 Pendiente |
-| [epic-2-crm.md](./epic-2-crm.md) | CRM y Gestión de Clientes | 8 | FR5-13 | 🔜 Pendiente |
+| [epic-2-crm.md](./epic-2-crm.md) | CRM y Gestión de Clientes | 9 | FR5-13 | 🔜 Pendiente |
 | [epic-3-motor-cobranzas.md](./epic-3-motor-cobranzas.md) | Motor de Cobranzas | 7 | FR14-20 | 🔜 Pendiente |
 | [epic-4-comunicacion.md](./epic-4-comunicacion.md) | Comunicación Multicanal | 4 | FR21-24 | 🔜 Pendiente |
 | [epic-5-respuestas-ia.md](./epic-5-respuestas-ia.md) | Loop de Respuestas e IA | 7 | FR25-31 | 🔜 Pendiente |
@@ -108,7 +108,7 @@ Epic 5: Loop de Respuestas e IA
 ### Epic 2: CRM y Gestión de Clientes 👥
 **Valor:** Miguel puede gestionar empresas, contactos y facturas
 **Contexto:** Schema companies/contacts/invoices, shadcn/ui DataTable
-**Stories:** 8
+**Stories:** 9
 
 ### Epic 3: Motor de Cobranzas Automatizado ⚙️
 **Valor:** Cobranzas automáticas según playbooks configurables

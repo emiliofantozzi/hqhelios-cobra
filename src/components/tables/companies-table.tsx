@@ -50,7 +50,6 @@ export interface CompanyRow {
   id: string;
   name: string;
   tax_id: string;
-  email: string | null;
   risk_level: 'bajo' | 'medio' | 'alto';
   is_active: boolean;
   invoice_count?: number;
@@ -92,11 +91,6 @@ export function CompaniesTable({ data, onDeactivate }: CompaniesTableProps) {
       {
         accessorKey: 'tax_id',
         header: 'Tax ID',
-      },
-      {
-        accessorKey: 'email',
-        header: 'Email',
-        cell: ({ row }) => row.original.email || '-',
       },
       {
         accessorKey: 'invoice_count',

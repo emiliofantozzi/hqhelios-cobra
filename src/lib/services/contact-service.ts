@@ -206,6 +206,8 @@ export async function updateContact(
   if (data.email !== undefined) updateData.email = data.email;
   if (data.phone !== undefined) updateData.phone = data.phone || null;
   if (data.position !== undefined) updateData.position = data.position || null;
+  if (data.isPrimaryContact !== undefined) updateData.is_primary_contact = data.isPrimaryContact;
+  if (data.isEscalationContact !== undefined) updateData.is_escalation_contact = data.isEscalationContact;
 
   const { data: updated, error } = await supabase
     .from('contacts')

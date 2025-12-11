@@ -4,6 +4,7 @@
  * @module app/layout
  */
 import { ClerkProvider } from '@clerk/nextjs';
+import { esES } from '@clerk/localizations';
 import { Inter, DM_Serif_Display } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
 import './globals.css';
@@ -26,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
+    <ClerkProvider localization={esES}>
       <html lang="es">
         <body className={`${inter.className} ${dmSerif.variable}`}>
           {children}

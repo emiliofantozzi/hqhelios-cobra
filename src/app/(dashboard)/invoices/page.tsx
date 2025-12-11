@@ -12,7 +12,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { InvoicesTable, type InvoiceRow } from '@/components/tables/invoices-table';
-import { Download } from 'lucide-react';
+import { Download, Upload } from 'lucide-react';
 import { exportInvoicesToCSV } from '@/lib/exports/export-invoices';
 
 interface ApiInvoice {
@@ -131,6 +131,12 @@ export default function InvoicesPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Link href="/invoices/import">
+              <Button variant="outline">
+                <Upload className="mr-2 h-4 w-4" />
+                Importar CSV
+              </Button>
+            </Link>
             <Button
               variant="outline"
               onClick={() => exportInvoicesToCSV(invoices as any)}

@@ -378,15 +378,16 @@ And ordenadas por received_at ASC (más antiguas primero)
 ```gherkin
 Given hay respuesta pendiente
 Then la card muestra:
-  | Campo | Valor |
-  | Empresa | company.name |
-  | Factura | invoice.invoice_number - amount |
-  | Contacto | contact.first_name + last_name |
-  | Preview | Primeras 100 chars de raw_content |
-  | Intent Badge | ai_interpretation.intent |
-  | Acción Sugerida | ai_interpretation.suggested_action |
-  | Confianza | ai_interpretation.confidence como % |
-  | Tiempo | received_at como "hace X minutos" |
+  | Campo | Valor | Nota |
+  | Empresa | company.name | - |
+  | Factura | invoice.invoice_number - amount | Link directo a factura |
+  | Contacto | contact.first_name + last_name | - |
+  | Preview | Primeras 100 chars de raw_content | - |
+  | Intent Badge | ai_interpretation.intent | - |
+  | Acción Sugerida | ai_interpretation.suggested_action | - |
+  | Confianza | ai_interpretation.confidence como % | - |
+  | Tiempo | received_at como "hace X minutos" | - |
+And click en factura navega a /invoices/[id] (no a una "cobranza")
 ```
 
 **Scenario: Badges de intent**
@@ -652,14 +653,15 @@ Then veo:
   | Empresa | company.name |
 ```
 
-**Scenario: Tab "Historial"**
+**Scenario: Tab "Comunicaciones"**
 ```gherkin
-Given veo tab "Historial"
+Given veo tab "Comunicaciones"
 Then veo timeline con:
-  - Mensajes enviados (con preview)
-  - Respuestas anteriores (si hay)
-  - Cambios de estado de collection
+  - 📤 Mensajes enviados (con preview)
+  - 📥 Respuestas recibidas (si hay)
+  - Estado del playbook (si está activo/pausado)
 And ordenado cronológicamente
+And este timeline es el mismo que se ve en la factura (bandeja de comunicaciones)
 ```
 
 **Scenario: Tab "Respuesta Actual"**

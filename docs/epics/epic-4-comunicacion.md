@@ -1,46 +1,45 @@
 ---
 id: epic-4
-title: "Comunicación Multicanal"
+title: "Comunicación por Email"
 status: pending
 priority: high
 dependencies: [epic-3]
-stories_count: 4
-frs_covered: [FR21, FR22, FR23, FR24]
+stories_count: 3
+frs_covered: [FR21, FR23, FR24]
 ---
 
-# Epic 4: Comunicación Multicanal 📧
+# Epic 4: Comunicación por Email
 
 ## Objetivo
-Enviar mensajes por email y WhatsApp con tracking completo de entrega.
+Enviar mensajes de cobranza por email con tracking completo de entrega.
 
 ## Valor para el Usuario
-Los mensajes llegan a los clientes por el canal más efectivo, con visibilidad total del estado de entrega.
+Los mensajes llegan a los clientes por email, con visibilidad total del estado de entrega.
+
+## Decisiones Arquitectónicas
+- **ADR-004:** Email Provider → Resend
+- **ADR-005:** WhatsApp → Postponed a Epic 5
 
 ## FRs Cubiertos
 - **FR21:** Envío de emails transaccionales
-- **FR22:** Envío de WhatsApp
 - **FR23:** Historial de mensajes enviados
 - **FR24:** Webhooks de delivery status
+
+> **Nota:** FR22 (WhatsApp) movido a Epic 5 por decisión de equipo (ver ADR-005)
 
 ## Contexto Técnico
 
 ### Integraciones
 | Servicio | SDK | Versión | Uso |
 |----------|-----|---------|-----|
-| SendGrid | @sendgrid/mail | 8.1.3 | Email transaccional |
-| Twilio | twilio | 5.2.2 | WhatsApp Business API |
+| Resend | resend | ^4.0.0 | Email transaccional |
 
 ### Variables de Entorno
 ```bash
-# SendGrid
-SENDGRID_API_KEY="SG...."
-SENDGRID_FROM_EMAIL="cobranzas@tudominio.com"
-SENDGRID_FROM_NAME="Cobranzas - TuEmpresa"
-
-# Twilio WhatsApp
-TWILIO_ACCOUNT_SID="AC..."
-TWILIO_AUTH_TOKEN="..."
-TWILIO_WHATSAPP_FROM="+14155238886"  # Sandbox
+# Resend
+RESEND_API_KEY="re_..."
+RESEND_FROM_EMAIL="cobranzas@tudominio.com"
+RESEND_FROM_NAME="Cobranzas - TuEmpresa"
 ```
 
 ### Schema: SentMessage
@@ -51,7 +50,7 @@ model SentMessage {
   collectionId       String    @db.Uuid
   playbookMessageId  String?   @db.Uuid
   contactId          String    @db.Uuid
-  channel            String    // email, whatsapp
+  channel            String    // email (whatsapp en Epic 5)
   subject            String?   // solo email
   body               String
   deliveryStatus     String    @default("pending")
@@ -59,7 +58,7 @@ model SentMessage {
   deliveredAt        DateTime?
   wasAiGenerated     Boolean   @default(false)
   temperatureUsed    String?
-  externalMessageId  String?   // ID de SendGrid/Twilio
+  externalMessageId  String?   // ID de Resend
 
   tenant          Tenant          @relation(fields: [tenantId], references: [id])
   collection      Collection      @relation(fields: [collectionId], references: [id])
@@ -84,7 +83,7 @@ model SentMessage {
 ### Story 4.1: Envío de Emails Transaccionales
 
 **Como** sistema,
-**Quiero** enviar emails de cobranza,
+**Quiero** enviar emails de cobranza via Resend,
 **Para que** los clientes reciban notificaciones por correo.
 
 #### Criterios de Aceptación
@@ -93,7 +92,7 @@ model SentMessage {
 ```gherkin
 Given el worker necesita enviar un mensaje por email
 When llama a sendEmail(to, subject, body)
-Then email se envía via SendGrid API
+Then email se envía via Resend API
 And retorna external_message_id
 ```
 
@@ -104,7 +103,7 @@ Then se crea registro en sent_messages:
   | Campo | Valor |
   | channel | email |
   | delivery_status | sent |
-  | external_message_id | sg_message_id |
+  | external_message_id | resend_id |
   | sent_at | timestamp |
 ```
 
@@ -119,28 +118,28 @@ And hay wrapper con estilos corporativos
 
 **Scenario: Manejo de error de envío**
 ```gherkin
-Given SendGrid API retorna error
+Given Resend API retorna error
 When intento enviar
 Then delivery_status = 'failed'
 And error se registra en logs
 And se lanza excepción para que worker maneje
 ```
 
-**Scenario: Rate limiting de SendGrid**
+**Scenario: Rate limiting**
 ```gherkin
-Given SendGrid retorna 429 (rate limit)
+Given Resend retorna 429 (rate limit)
 When intento enviar
 Then reintento con backoff exponencial
 And máximo 3 reintentos
 ```
 
 #### Notas Técnicas
-- **Servicio:** `src/lib/services/message-service.ts`
+- **Servicio:** `src/lib/services/email-service.ts`
 - **Implementación:**
 ```typescript
-import sgMail from '@sendgrid/mail';
+import { Resend } from 'resend';
 
-sgMail.setApiKey(process.env.SENDGRID_API_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendEmail(
   to: string,
@@ -149,17 +148,18 @@ export async function sendEmail(
 ): Promise<string> {
   const html = formatBodyAsHtml(body);
 
-  const [response] = await sgMail.send({
+  const { data, error } = await resend.emails.send({
+    from: `${process.env.RESEND_FROM_NAME} <${process.env.RESEND_FROM_EMAIL}>`,
     to,
-    from: {
-      email: process.env.SENDGRID_FROM_EMAIL!,
-      name: process.env.SENDGRID_FROM_NAME!,
-    },
     subject,
     html,
   });
 
-  return response.headers['x-message-id'];
+  if (error) {
+    throw new Error(`Email failed: ${error.message}`);
+  }
+
+  return data!.id;
 }
 
 function formatBodyAsHtml(body: string): string {
@@ -177,107 +177,7 @@ function formatBodyAsHtml(body: string): string {
 
 ---
 
-### Story 4.2: Envío de WhatsApp
-
-**Como** sistema,
-**Quiero** enviar mensajes de WhatsApp,
-**Para que** los clientes reciban notificaciones en su canal preferido.
-
-#### Criterios de Aceptación
-
-**Scenario: Enviar WhatsApp exitosamente**
-```gherkin
-Given el worker necesita enviar por WhatsApp
-When llama a sendWhatsApp(to, body)
-Then mensaje se envía via Twilio API
-And retorna message_sid
-```
-
-**Scenario: Validar formato de número**
-```gherkin
-Given número es "5512345678"
-When se procesa para envío
-Then se formatea como "+525512345678"
-And incluye código de país México
-```
-
-**Scenario: Número inválido**
-```gherkin
-Given número tiene formato incorrecto
-When intento enviar
-Then veo error "Número de teléfono inválido"
-And no se intenta envío
-And delivery_status = 'failed'
-```
-
-**Scenario: Sandbox para desarrollo**
-```gherkin
-Given estoy en ambiente de desarrollo
-When envío WhatsApp
-Then usa número sandbox de Twilio
-And solo funciona con números que hicieron opt-in
-```
-
-**Scenario: Registro de mensaje enviado**
-```gherkin
-Given WhatsApp se envió correctamente
-Then se crea registro en sent_messages:
-  | Campo | Valor |
-  | channel | whatsapp |
-  | delivery_status | sent |
-  | external_message_id | twilio_sid |
-```
-
-#### Notas Técnicas
-- **Implementación:**
-```typescript
-import twilio from 'twilio';
-
-const client = twilio(
-  process.env.TWILIO_ACCOUNT_SID!,
-  process.env.TWILIO_AUTH_TOKEN!
-);
-
-export async function sendWhatsApp(
-  to: string,
-  body: string
-): Promise<string> {
-  const formattedTo = formatPhoneNumber(to);
-
-  const message = await client.messages.create({
-    body,
-    from: `whatsapp:${process.env.TWILIO_WHATSAPP_FROM}`,
-    to: `whatsapp:${formattedTo}`,
-  });
-
-  return message.sid;
-}
-
-function formatPhoneNumber(phone: string): string {
-  // Remover caracteres no numéricos
-  const digits = phone.replace(/\D/g, '');
-
-  // Si no tiene código de país, asumir México
-  if (digits.length === 10) {
-    return `+52${digits}`;
-  }
-
-  // Si ya tiene código de país
-  if (!digits.startsWith('+')) {
-    return `+${digits}`;
-  }
-
-  return digits;
-}
-```
-- **Sandbox:** Documentar proceso de opt-in para testing
-
-#### Prerequisitos
-- Story 4.1 completada
-
----
-
-### Story 4.3: Historial de Mensajes Enviados
+### Story 4.2: Historial de Mensajes Enviados
 
 **Como** Miguel,
 **Quiero** ver el historial completo de mensajes por cobranza,
@@ -292,8 +192,8 @@ When veo tab "Mensajes"
 Then veo timeline con mensajes ordenados por fecha:
   | Columna | Descripción |
   | Fecha/Hora | sent_at formateado |
-  | Canal | Icono Email/WhatsApp |
-  | Subject | Solo si email |
+  | Canal | Icono Email |
+  | Subject | Asunto del email |
   | Preview | Primeras 100 caracteres |
   | Estado | Badge con delivery_status |
 ```
@@ -302,8 +202,6 @@ Then veo timeline con mensajes ordenados por fecha:
 ```gherkin
 Given mensaje tiene channel = 'email'
 Then veo icono Mail de Lucide
-Given mensaje tiene channel = 'whatsapp'
-Then veo icono MessageCircle de Lucide
 ```
 
 **Scenario: Badges de estado**
@@ -311,11 +209,11 @@ Then veo icono MessageCircle de Lucide
 Given delivery_status del mensaje
 Then veo badge correspondiente:
   | Status | Badge | Color |
-  | pending | ⏳ Pendiente | gray |
-  | sent | ✈️ Enviado | blue |
-  | delivered | ✅ Entregado | green |
-  | bounced | ↩️ Rebotado | orange |
-  | failed | ❌ Fallido | red |
+  | pending | Pendiente | gray |
+  | sent | Enviado | blue |
+  | delivered | Entregado | green |
+  | bounced | Rebotado | orange |
+  | failed | Fallido | red |
 ```
 
 **Scenario: Ver contenido completo**
@@ -324,9 +222,9 @@ Given hago click en un mensaje del timeline
 When se abre Dialog
 Then veo:
   | Campo | Valor |
-  | Asunto | subject (si email) |
+  | Asunto | subject |
   | Contenido | body completo |
-  | Enviado a | contact.email o phone |
+  | Enviado a | contact.email |
   | Fecha envío | sent_at |
   | Fecha entrega | delivered_at |
   | ID externo | external_message_id |
@@ -356,49 +254,36 @@ const messages = await supabase
 - **UI:** Timeline vertical con Separator + iconos Lucide
 
 #### Prerequisitos
-- Story 4.1 y 4.2 completadas
+- Story 4.1 completada
 
 ---
 
-### Story 4.4: Webhooks de Delivery Status
+### Story 4.3: Webhooks de Delivery Status
 
 **Como** sistema,
-**Quiero** recibir webhooks de estado de entrega,
+**Quiero** recibir webhooks de estado de entrega de Resend,
 **Para que** el estado de mensajes esté siempre actualizado.
 
 #### Criterios de Aceptación
 
-**Scenario: Webhook de SendGrid**
+**Scenario: Webhook de Resend**
 ```gherkin
-Given SendGrid envía evento de delivery
-When POST llega a /api/webhooks/sendgrid
+Given Resend envía evento de delivery
+When POST llega a /api/webhooks/resend
 Then se procesa el evento
 And se busca sent_message por external_message_id
 And se actualiza delivery_status
 ```
 
-**Scenario: Eventos de SendGrid soportados**
+**Scenario: Eventos de Resend soportados**
 ```gherkin
-Given diferentes eventos de SendGrid
+Given diferentes eventos de Resend
 Then se mapean a delivery_status:
-  | Evento SendGrid | delivery_status |
-  | delivered | delivered |
-  | bounce | bounced |
-  | dropped | failed |
-  | deferred | sent (sin cambio) |
-```
-
-**Scenario: Webhook de Twilio**
-```gherkin
-Given Twilio envía status callback
-When POST llega a /api/webhooks/twilio
-Then se procesa el evento
-And se actualiza según MessageStatus:
-  | Status Twilio | delivery_status |
-  | delivered | delivered |
-  | read | delivered |
-  | failed | failed |
-  | undelivered | bounced |
+  | Evento Resend | delivery_status |
+  | email.delivered | delivered |
+  | email.bounced | bounced |
+  | email.complained | failed |
+  | email.sent | sent |
 ```
 
 **Scenario: Actualizar timestamps**
@@ -438,21 +323,34 @@ Then se registra en logs:
 ```
 
 #### Notas Técnicas
-- **Rutas:**
-  - `src/app/api/webhooks/sendgrid/route.ts`
-  - `src/app/api/webhooks/twilio/route.ts`
-- **SendGrid webhook:**
+- **Ruta:** `src/app/api/webhooks/resend/route.ts`
+- **Implementación:**
 ```typescript
+import { Webhook } from 'svix';
+
 export async function POST(request: Request) {
-  const events = await request.json();
+  const payload = await request.text();
+  const headers = {
+    'svix-id': request.headers.get('svix-id') ?? '',
+    'svix-timestamp': request.headers.get('svix-timestamp') ?? '',
+    'svix-signature': request.headers.get('svix-signature') ?? '',
+  };
 
-  for (const event of events) {
-    const messageId = event.sg_message_id;
-    const eventType = event.event;
+  // Verificar firma
+  const wh = new Webhook(process.env.RESEND_WEBHOOK_SECRET!);
+  let event: ResendWebhookEvent;
 
-    const status = mapSendGridEvent(eventType);
-    if (!status) continue;
+  try {
+    event = wh.verify(payload, headers) as ResendWebhookEvent;
+  } catch {
+    return new Response('Invalid signature', { status: 401 });
+  }
 
+  // Procesar evento
+  const messageId = event.data.email_id;
+  const status = mapResendEvent(event.type);
+
+  if (status) {
     await supabase
       .from('sent_messages')
       .update({
@@ -464,54 +362,51 @@ export async function POST(request: Request) {
 
   return new Response('OK', { status: 200 });
 }
-```
-- **Twilio webhook:**
-```typescript
-export async function POST(request: Request) {
-  const formData = await request.formData();
-  const messageSid = formData.get('MessageSid') as string;
-  const messageStatus = formData.get('MessageStatus') as string;
 
-  // Validar firma
-  const signature = request.headers.get('X-Twilio-Signature');
-  if (!validateTwilioSignature(signature, formData)) {
-    return new Response('Unauthorized', { status: 401 });
-  }
-
-  const status = mapTwilioStatus(messageStatus);
-
-  await supabase
-    .from('sent_messages')
-    .update({
-      delivery_status: status,
-      delivered_at: status === 'delivered' ? new Date() : null,
-    })
-    .eq('external_message_id', messageSid);
-
-  return new Response('OK', { status: 200 });
+function mapResendEvent(eventType: string): string | null {
+  const mapping: Record<string, string> = {
+    'email.sent': 'sent',
+    'email.delivered': 'delivered',
+    'email.bounced': 'bounced',
+    'email.complained': 'failed',
+  };
+  return mapping[eventType] ?? null;
 }
 ```
-- **Configurar webhooks:**
-  - SendGrid: Settings > Mail Settings > Event Notification
-  - Twilio: Configure webhook URL en número de WhatsApp
+- **Dependencia:** `pnpm add svix` (para verificación de webhooks)
+- **Configurar webhook en Resend Dashboard:**
+  - URL: `https://tu-dominio.com/api/webhooks/resend`
+  - Eventos: `email.sent`, `email.delivered`, `email.bounced`, `email.complained`
 
 #### Prerequisitos
-- Story 4.1 y 4.2 completadas
+- Story 4.1 completada
+- Dominio verificado en Resend
 
 ---
 
 ## Definition of Done (Epic)
 
 - [ ] Todas las stories completadas
-- [ ] Emails enviándose correctamente via SendGrid
-- [ ] WhatsApp enviándose via Twilio (sandbox)
+- [ ] Emails enviándose correctamente via Resend
 - [ ] Timeline de mensajes visible en UI
 - [ ] Webhooks recibiendo y actualizando status
 - [ ] Logging completo de envíos
 - [ ] Manejo de errores robusto
-- [ ] Tests de integración con mocks de APIs
+- [ ] Tests de integración con mocks de Resend
 
 ---
 
-**Última actualización:** 2025-12-01
-**Estado:** 🔜 Pendiente
+## Notas de Migración
+
+Este epic originalmente incluía WhatsApp (Story 4.2 original).
+Por decisión de equipo (ADR-005), WhatsApp se movió a Epic 5.
+
+Las stories fueron renumeradas:
+- 4.1: Envío de Emails (sin cambios)
+- 4.2: Historial de Mensajes (antes 4.3)
+- 4.3: Webhooks (antes 4.4)
+
+---
+
+**Última actualización:** 2025-12-05
+**Estado:** Pendiente

@@ -478,25 +478,27 @@ WHERE status NOT IN ('completed', 'escalated');
 
 ---
 
-### Story 3.5: Crear Cobranza desde Factura
+### Story 3.5: Activar Playbook en Factura
 
 **Como** Miguel,
-**Quiero** iniciar una cobranza para una factura,
+**Quiero** activar un playbook en una factura,
 **Para que** el sistema comience el seguimiento automático.
+
+> **Nota de Arquitectura (2025-12-04):** La UI es factura-céntrica. El usuario activa un playbook desde la vista de factura, no "crea una cobranza" como entidad separada. La tabla Collection es implementación interna.
 
 #### Criterios de Aceptación
 
 **Scenario: Botón visible en factura elegible**
 ```gherkin
 Given factura tiene payment_status IN ('pendiente', 'fecha_confirmada')
-And no tiene collection activa
+And no tiene playbook activo
 When veo el detalle de factura
-Then veo botón "Iniciar Cobranza"
+Then veo botón "Activar Playbook"
 ```
 
-**Scenario: Abrir modal de cobranza**
+**Scenario: Abrir modal de activación**
 ```gherkin
-Given hago click en "Iniciar Cobranza"
+Given hago click en "Activar Playbook"
 Then veo Dialog con:
   | Campo | Valor |
   | Factura | {{invoice_number}} - {{amount}} |
@@ -505,49 +507,51 @@ Then veo Dialog con:
   | Playbook | Selector con default pre-seleccionado |
 ```
 
-**Scenario: Crear collection**
+**Scenario: Activar playbook**
 ```gherkin
 Given selecciono playbook y confirmo
-When hago click en "Iniciar"
-Then se crea Collection con:
+When hago click en "Activar"
+Then se crea registro interno (Collection) con:
   | Campo | Valor |
   | status | active |
   | current_message_index | 0 |
   | started_at | now |
   | next_action_at | now (para enviar inmediatamente) |
 And veo mensaje de éxito
-And navego a vista de collection
+And la factura muestra badge "Playbook Activo: [nombre]"
+And me quedo en la vista de factura (no navego a otra página)
 ```
 
 **Scenario: Validación de contacto**
 ```gherkin
 Given empresa no tiene contacto primary
-When intento iniciar cobranza
+When intento activar playbook
 Then veo error "La empresa debe tener un contacto principal"
 And enlace para ir a agregar contacto
 ```
 
-**Scenario: Ya existe collection activa**
+**Scenario: Ya existe playbook activo**
 ```gherkin
-Given factura ya tiene collection activa
+Given factura ya tiene playbook activo
 When veo el detalle
-Then no veo "Iniciar Cobranza"
-And veo "Ver Cobranza Activa" con link
+Then no veo "Activar Playbook"
+And veo sección "Playbook Activo" con controles de Pausar/Completar
 ```
 
 #### Notas Técnicas
-- **API:** `POST /api/collections`
+- **API:** `POST /api/invoices/[id]/playbook` (factura-céntrico)
 - **Payload:**
 ```typescript
-interface CreateCollectionPayload {
-  invoiceId: string;
+interface ActivatePlaybookPayload {
   playbookId: string;
 }
-// company_id, primary_contact_id, tenant_id se derivan
+// invoiceId viene de la URL, company_id, primary_contact_id, tenant_id se derivan
 ```
+- **UI:** Botón y modal dentro de `src/app/(dashboard)/invoices/[invoiceId]/page.tsx`
+- **Componente:** `src/app/(dashboard)/invoices/[invoiceId]/components/playbook-controls.tsx`
 - **Validaciones server-side:**
   - Invoice pertenece al tenant
-  - Invoice no tiene collection activa
+  - Invoice no tiene playbook activo
   - Company tiene primary contact
   - Playbook pertenece al tenant y está activo
 
@@ -731,77 +735,81 @@ async function processCollections() {
 
 ---
 
-### Story 3.7: Control Manual de Cobranzas
+### Story 3.7: Control Manual de Playbook Activo
 
 **Como** Miguel,
-**Quiero** pausar, reanudar y completar cobranzas manualmente,
+**Quiero** pausar, reanudar y completar el playbook activo de una factura,
 **Para que** pueda manejar casos excepcionales.
+
+> **Nota de Arquitectura (2025-12-04):** Todos los controles están DENTRO de la vista de detalle de factura. No hay página separada de "cobranzas".
 
 #### Criterios de Aceptación
 
-**Scenario: Pausar cobranza**
+**Scenario: Pausar playbook activo**
 ```gherkin
-Given collection tiene status = 'active'
-When hago click en "Pausar"
+Given factura tiene playbook activo (status = 'active')
+When hago click en "Pausar Playbook" en la vista de factura
 Then status = 'paused'
+And badge cambia a "Playbook Pausado"
 And worker no la procesa
 And veo mensaje de confirmación
 ```
 
-**Scenario: Reanudar cobranza**
+**Scenario: Reanudar playbook**
 ```gherkin
-Given collection tiene status = 'paused'
-When hago click en "Reanudar"
+Given factura tiene playbook pausado (status = 'paused')
+When hago click en "Reanudar" en la vista de factura
 Then status = 'active'
+And badge cambia a "Playbook Activo: [nombre]"
 And next_action_at = now
 And worker la procesará en próxima ejecución
 ```
 
 **Scenario: Completar manualmente**
 ```gherkin
-Given collection está activa o pausada
-When hago click en "Completar"
+Given factura tiene playbook activo o pausado
+When hago click en "Completar Playbook"
 And confirmo en dialog
 Then status = 'completed'
 And completed_at = now
-And veo mensaje "Cobranza completada"
+And badge desaparece
+And historial de comunicaciones se mantiene visible
+And veo mensaje "Playbook completado"
 ```
 
-**Scenario: Ver historial de collection**
+**Scenario: Ver bandeja de comunicaciones**
 ```gherkin
-Given estoy en detalle de collection
-When veo la página
+Given estoy en detalle de factura
+When veo el tab "Comunicaciones"
 Then veo timeline con:
   | Evento | Timestamp | Detalle |
-  | Iniciada | startedAt | Playbook usado |
-  | Mensaje 1 enviado | sent_at | Canal, preview |
-  | Pausada | - | Por usuario X |
-  | Reanudada | - | Por usuario X |
-  | Respuesta recibida | received_at | Preview |
+  | Playbook activado | startedAt | Nombre del playbook |
+  | 📤 Mensaje enviado | sent_at | Canal, preview, estado |
+  | 📥 Respuesta recibida | received_at | Preview |
+  | Playbook pausado | - | Por usuario X |
+  | Playbook reanudado | - | Por usuario X |
 ```
 
-**Scenario: Acciones desde dropdown**
+**Scenario: Controles visibles según estado**
 ```gherkin
-Given estoy en lista de collections
-When hago click en menú de acciones de una collection
-Then veo opciones según estado:
-  | Estado Actual | Opciones |
-  | active | Pausar, Completar, Ver Detalle |
-  | paused | Reanudar, Completar, Ver Detalle |
-  | completed | Ver Detalle |
+Given estoy en detalle de factura
+When veo la sección "Playbook Activo"
+Then veo botones según estado:
+  | Estado Actual | Botones Visibles |
+  | active | Pausar, Completar |
+  | paused | Reanudar, Completar |
+  | sin playbook | Activar Playbook |
+  | completed | (solo historial visible) |
 ```
 
 #### Notas Técnicas
-- **API:**
-  - `POST /api/collections/[id]/pause`
-  - `POST /api/collections/[id]/resume`
-  - `POST /api/collections/[id]/complete`
-- **Rutas UI:**
-  - `src/app/(dashboard)/collections/page.tsx`
-  - `src/app/(dashboard)/collections/[id]/page.tsx`
+- **API:** `PATCH /api/invoices/[id]/playbook`
+  - Body: `{ action: 'pause' | 'resume' | 'complete' }`
+- **UI:** Dentro de `src/app/(dashboard)/invoices/[invoiceId]/page.tsx`
 - **Componentes:**
-  - `src/components/collections/collection-timeline.tsx`
-  - DropdownMenu de shadcn/ui
+  - `src/app/(dashboard)/invoices/[invoiceId]/components/playbook-controls.tsx`
+  - `src/app/(dashboard)/invoices/[invoiceId]/components/communications-tab.tsx`
+  - `src/app/(dashboard)/invoices/[invoiceId]/components/message-timeline.tsx`
 
 #### Prerequisitos
 - Story 3.5 completada

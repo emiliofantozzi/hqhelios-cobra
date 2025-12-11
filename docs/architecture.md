@@ -38,7 +38,7 @@ El proyecto cobra-bmad presenta **188 user stories** organizadas en 5 fases de i
 
 **FASE 3: Motor de Cobranzas** (Semanas 4-5)
 - Epic 3.1: Sistema de Playbooks (templates de workflows)
-- Epic 3.2: Sistema de Collections (orquestación de flujos)
+- Epic 3.2: Motor de Playbooks (orquestación integrada en factura)
 - Epic 3.3: Envío de Mensajes Multicanal (Email + WhatsApp)
 - 13 historias incluyendo worker de background
 
@@ -355,6 +355,17 @@ MVP requiere validación rápida de concepto. Modelo agrupado (1 email → múlt
 **Estado:** ✅ APROBADA con mitigación de spam obligatoria
 
 **Acción Requerida:** Implementar rate limiting por empresa (máximo X cobranzas activas simultáneas, espaciado de Y horas entre mensajes al mismo contacto)
+
+**Clarificación de Visibilidad (2025-12-04):**
+
+La tabla `Collection` (o `InvoicePlaybookState`) es un **detalle de implementación interna**, NO una entidad de negocio visible al usuario:
+
+- ❌ NO hay ruta `/collections` en la UI
+- ❌ NO hay menú "Cobranzas" separado
+- ✅ El estado del playbook se gestiona DENTRO de la vista de factura
+- ✅ La "bandeja de comunicaciones" vive en `/invoices/[id]`
+
+**Razón:** El modelo mental natural es "gestiono la cobranza de esta factura", no "creo una cobranza que apunta a esta factura".
 
 ---
 
@@ -1214,13 +1225,13 @@ src/
 │   ├── (dashboard)/              # Dashboard group
 │   │   ├── layout.tsx
 │   │   ├── companies/            # Companies domain
-│   │   ├── invoices/             # Invoices domain
-│   │   ├── collections/          # Collections domain
-│   │   └── responses/            # Responses domain
+│   │   ├── invoices/             # Invoices domain (incluye playbooks activos y comunicaciones)
+│   │   ├── playbooks/            # Playbooks configuration
+│   │   └── responses/            # Responses inbox
 │   └── api/                      # API routes
 │       ├── companies/
-│       ├── invoices/
-│       ├── collections/
+│       ├── invoices/             # Incluye /[id]/playbook y /[id]/communications
+│       ├── playbooks/
 │       └── webhooks/
 │
 ├── components/                   # React components
@@ -1433,12 +1444,16 @@ cobra-bmad/
 │   │   │   │       └── edit/
 │   │   │   │           └── page.tsx    # Editar contacto (modal desde company)
 │   │   │   │
-│   │   │   ├── invoices/               # EPIC 2.3: Gestión de Facturas
-│   │   │   │   ├── page.tsx            # Lista de facturas con filtros
+│   │   │   ├── invoices/               # EPIC 2.3 + 3.2 + 3.3: Gestión de Facturas y Cobranzas
+│   │   │   │   ├── page.tsx            # Lista de facturas con filtro "En gestión"
 │   │   │   │   ├── [invoiceId]/
-│   │   │   │   │   ├── page.tsx        # Detalle de factura (history, collections)
-│   │   │   │   │   └── edit/
-│   │   │   │   │       └── page.tsx    # Editar factura
+│   │   │   │   │   ├── page.tsx        # Detalle de factura (tabs: Info | Comunicaciones | Historial)
+│   │   │   │   │   ├── edit/
+│   │   │   │   │   │   └── page.tsx    # Editar factura
+│   │   │   │   │   └── components/     # Componentes de cobranza integrados
+│   │   │   │   │       ├── communications-tab.tsx   # Bandeja in/out
+│   │   │   │   │       ├── playbook-controls.tsx    # Activar/Pausar/Completar playbook
+│   │   │   │   │       └── message-timeline.tsx     # Timeline de mensajes
 │   │   │   │   ├── new/
 │   │   │   │   │   └── page.tsx        # Nueva factura
 │   │   │   │   └── import/
@@ -1452,11 +1467,6 @@ cobra-bmad/
 │   │   │   │   │       └── page.tsx    # Editar playbook (builder de mensajes)
 │   │   │   │   └── new/
 │   │   │   │       └── page.tsx        # Nuevo playbook
-│   │   │   │
-│   │   │   ├── collections/            # EPIC 3.2: Sistema de Collections
-│   │   │   │   ├── page.tsx            # Lista de cobranzas activas/completadas
-│   │   │   │   └── [collectionId]/
-│   │   │   │       └── page.tsx        # Detalle de collection (timeline, mensajes)
 │   │   │   │
 │   │   │   ├── responses/              # EPIC 4.2: Bandeja de Supervisión
 │   │   │   │   ├── page.tsx            # Bandeja de respuestas pendientes
@@ -1481,8 +1491,12 @@ cobra-bmad/
 │   │       │   ├── route.ts
 │   │       │   ├── [id]/
 │   │       │   │   ├── route.ts
-│   │       │   │   └── status/
-│   │       │   │       └── route.ts    # PATCH - cambiar estado
+│   │       │   │   ├── status/
+│   │       │   │   │   └── route.ts    # PATCH - cambiar estado
+│   │       │   │   ├── playbook/       # Gestión de playbook activo
+│   │       │   │   │   └── route.ts    # GET (estado), POST (activar), PATCH (pausar/reanudar/completar)
+│   │       │   │   └── communications/ # Bandeja de comunicaciones
+│   │       │   │       └── route.ts    # GET (mensajes in/out de esta factura)
 │   │       │   └── import/
 │   │       │       └── route.ts        # POST - importar CSV
 │   │       │
@@ -1493,16 +1507,11 @@ cobra-bmad/
 │   │       │       └── messages/
 │   │       │           └── route.ts    # GET, POST, PATCH, DELETE
 │   │       │
-│   │       ├── collections/
-│   │       │   ├── route.ts            # GET (list), POST (create)
-│   │       │   └── [id]/
-│   │       │       ├── route.ts        # GET, PATCH
-│   │       │       ├── pause/
-│   │       │       │   └── route.ts    # POST - pausar
-│   │       │       ├── resume/
-│   │       │       │   └── route.ts    # POST - reanudar
-│   │       │       └── complete/
-│   │       │           └── route.ts    # POST - completar manualmente
+│   │       ├── internal/               # APIs internas (usadas por worker, no expuestas en UI)
+│   │       │   └── collections/        # Estado de playbooks activos (tabla Collection)
+│   │       │       ├── route.ts        # GET (para worker)
+│   │       │       └── [id]/
+│   │       │           └── route.ts    # PATCH (actualizar estado)
 │   │       │
 │   │       ├── customer-responses/
 │   │       │   ├── route.ts
@@ -1706,12 +1715,13 @@ cobra-bmad/
   - `src/components/forms/playbook-form.tsx`
   - `prisma/seed.ts` - Playbooks pre-configurados
 
-- **Epic 3.2:** Sistema de Collections
-  - `src/app/(dashboard)/collections/` - UI
-  - `src/lib/services/collection-service.ts`
-  - `src/lib/workers/collection-worker.ts` - Worker
+- **Epic 3.2:** Motor de Playbooks (integrado en factura)
+  - `src/app/(dashboard)/invoices/[invoiceId]/components/` - Componentes de cobranza
+  - `src/lib/services/invoice-playbook-service.ts` - Lógica de playbooks activos
+  - `src/lib/workers/collection-worker.ts` - Worker (procesa tabla Collection interna)
   - `src/app/api/cron/collection-worker/route.ts` - Cron job
-  - `src/components/collections/collection-timeline.tsx`
+  - `src/app/api/invoices/[id]/playbook/route.ts` - API de playbook activo
+  - `src/app/api/invoices/[id]/communications/route.ts` - Bandeja de comunicaciones
 
 - **Epic 3.3:** Envío de Mensajes
   - `src/lib/services/message-service.ts` - sendEmail, sendWhatsApp
